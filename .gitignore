@@ -1,0 +1,14 @@
+# Vivado / 工具链生成物
+.Xil/
+*.jou
+*.log
+*.rpt
+*.bit
+*.wdb
+*.cache/
+*.backup.jou
+*.backup.log
+vivado_*.backup.*
+
+# 操作系统
+.DS_Store
