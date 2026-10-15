@@ -358,9 +358,8 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 ### 3.9 复位
 
 - 使用 EGO1 的 RST 按键（原理图标号 `FPGA_RESET`，引脚 **P15**）
-- **待实测确认**：该按键的极性（按下为高还是为低）与是否有外部上拉。现有 `toolchain_check/led_blink.v` 按低有效（`sys_rst_n`）写，但**尚未上板实测过**。
-- **验证方法**：烧录后按/不按键观察 LED 行为即可判定；或查 `doc/EGO1电路图.pdf` 的按键电路
-- **保守做法**：RTL 内部统一用**同步复位**（异步断言、同步释放），输入引脚先过两级同步器再使用，避免亚稳态
+- ✅ **已实测确认（2026-10-15）**：该按键默认输出**高电平**、按下为低，即**低有效复位**。依据：`toolchain_check/led_blink.v` 按低有效（`sys_rst_n`）实现，上板烧录后 LED 正常二进制计数（若极性判断相反，复位将一直有效、LED 全灭不动）。**CPU 设计沿用 `sys_rst_n` 低有效约定**
+- **保守做法**：RTL 内部统一采用**异步复位、同步释放**（复位输入先过两级同步器再参与逻辑），避免亚稳态；不要用纯组合的异步复位直接驱动大量寄存器
 
 ---
 
@@ -528,7 +527,9 @@ hardware_design/
 | verilator | **5.046** 已安装 | 可作为补充 lint / 快速仿真 |
 | Python | 3.13（conda base） | 写参考模型、装配脚本 |
 | LA32R 汇编器 | **未安装**，dnf 有 `binutils-loongarch64-linux-gnu`、`gcc-loongarch64-linux-gnu` 16.2 | **阶段 0 必装**。用 `-march=la32rv1.0 -mabi=ilp32s` |
-| 上板下载 | 未实测过 | `toolchain_check` 只生成了 .bit，未见 `program_hw` 记录 |
+| 上板下载 | ✅ **已实测跑通（2026-10-15）** | JTAG 链路打通：目标 `localhost:3121/xilinx_tcf/Xilinx/1234-tulA`，器件 `xc7a35t_0`，IDCODE `0x0362D093`（Artix-7 35T 标准值）；`led_blink.bit` 已烧录，DONE 信号（`IR.BIT5_DONE`、`CONFIG_STATUS.BIT14_DONE_PIN`）均为 1，LED 正常二进制计数 |
+| JTAG udev 规则 | ✅ **已安装（2026-10-15）** | `/etc/udev/rules.d/52-xilinx-ftdi-usb.rules`（Vivado 官方），设备节点权限 `rw-rw-rw-`，普通用户即可烧录，无需 root |
+| 板载 JTAG 芯片 | FTDI FT2232H（`0403:6010`） | `lsusb -v` 显示 `iManufacturer=Xilinx`、`iProduct=TUL`；**不带 `-v` 的 `lsusb` 只显示通用 FTDI 名称**，勿据此误判设备身份 |
 
 > **芯片型号的两种写法**（同一颗芯片，勿混淆）：
 > - **Vivado part 名**：`xc7a35tcsg324-1` —— 小写、速度等级在末尾。**脚本与约束里必须用这个**（`build.tcl` 即此写法）
@@ -668,12 +669,13 @@ test_arith.s ──> loongarch64-linux-gnu-as -march=la32rv1.0 -mabi=ilp32s ─�
 |---|------|----------|
 | 1 | 安装 `binutils-loongarch64-linux-gnu` / `gcc-loongarch64-linux-gnu`，实测 LA32R 汇编 | 阶段 0 |
 | 2 | 用 binutils 实测结果**回填 §2.4 编码表**，核对手册 | 阶段 0 |
-| 3 | 复位按键 P15 的实际极性与上拉情况 | 阶段 0 或首次上板 |
+| 3 | ~~复位按键 P15 的实际极性与上拉情况~~ | ✅ **已完成（2026-10-15）**：低有效，见 §3.9 |
 | 4 | 确认课程报告模板（群文件）的格式要求 | 阶段 1 结束前 |
 | 5 | 确认中期检查的具体日期与形式（是否要上板） | 尽快向老师确认 |
 | 6 | 申优须提前告知验收教师 | 终验前 |
 | 7 | 分部/校区对应的终验周次（合肥 14~15 周 / 宣城 16~17 周） | 尽快确认 |
-| 8 | **实际下载 `toolchain_check/led_blink` 到 EGO1，确认 JTAG 连接与板级运行** | 阶段 0（最高优先级） |
+| 8 | ~~实际下载 `toolchain_check/led_blink` 到 EGO1，确认 JTAG 连接与板级运行~~ | ✅ **已完成（2026-10-15）**：JTAG 链路 + 烧录 + 板级运行全部验证通过 |
+| 9 | 是否生成 MCS 并烧录 QSPI Flash（掉电保留配置） | 需要脱机演示时 |
 
 ---
 
@@ -724,7 +726,8 @@ test_arith.s ──> loongarch64-linux-gnu-as -march=la32rv1.0 -mabi=ilp32s ─�
 | 器件 | xc7a35tcsg324-1 |
 | LUT / BRAM Tile / DSP | 20800 / 50 / 90 |
 | 系统时钟 | 100 MHz（P17） |
-| 复位 | P15（极性待实测） |
+| 复位 | P15，**低有效**（2026-10-15 实测确认） |
+| JTAG | FTDI FT2232H `0403:6010`，IDCODE `0x0362D093`，udev 规则已装 |
 | 参考设计时序余量 | WNS = +5.75 ns @ 100 MHz |
 | LA32R 复位入口 | `0x1C000000` |
 | 指令条数 | 46（+ NOP 别名） |
