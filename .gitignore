@@ -44,8 +44,6 @@ upgrade_project_migration_report.log
 
 # ---- 提交白名单（覆盖上面的忽略规则）----
 # 测试程序的存储器初始化文件是重新生成比特流的必要输入，必须进 git：
-!cpu_single/cpu_single.srcs/**/*.hex
-!cpu_single/cpu_single.srcs/**/*.mem
 !tests/hex/*.mem
 !tests/hex/*.hex
 

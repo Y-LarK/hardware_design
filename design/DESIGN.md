@@ -465,11 +465,11 @@ hardware_design/
 ├── design/
 │   ├── DESIGN.md              # 本文档
 │   └── QUESTION.md            # 题目原文
-├── cpu_single/                # 单周期 Vivado 工程（只提交 .srcs/ 下的源）
-│   └── cpu_single.srcs/
-│       ├── sources_1/imports/single_cycle/   # 10 个 .v（当前开发主线）
-│       ├── constrs_1/imports/constraints/cpu.xdc
-│       └── sim_1/imports/single_cycle/       # tb_cpu.v + test_prog.hex
+├── rtl_single_cycle/          # 单周期 CPU 源码（10 个 .v，当前开发主线，新增 RTL 放这里）
+├── constraints/               # cpu.xdc（工程用）+ ego1.xdc（官方全量参考）
+├── sim/                       # testbench（tb_cpu.v）
+├── tests/hex/                 # IMEM 初始化文件（test_prog.hex）
+├── cpu_single/                # Vivado 工程容器（引用上面的源，整体不进 git）
 ├── rtl/                       # 流水线版规划结构（阶段 3 起用）
 │   ├── cpu_top.v              # 顶层：流水线 + IMEM + DMEM + MMIO 译码
 │   ├── core/
@@ -531,23 +531,29 @@ hardware_design/
 2. **绝对路径**：`.xpr` 记录创建机器上的路径（`C:/Users/...` vs `/home/ylk/...`），跨机器即失效
 3. **跨 OS 路径分隔符**：Windows `\` 与 Linux `/` 混在工程描述里，同版本也常出问题
 
-**解法（Xilinx 官方推荐的多机协作方式）：仓库只存「源」，不存「工程」**
+**解法（Xilinx 官方推荐的多机协作方式）：仓库只存「源」，不存「工程」；工程用「引用式」挂源**
 
-| 进 git（可移植纯文本） | 不进 git（每人在本机自建/生成） |
+**源文件目录（独立于工程，新增文件也放这里）**：
+
+| 目录 | 内容 | 说明 |
+|---|---|---|
+| `rtl_single_cycle/` | 单周期 CPU 全部 10 个 .v | 新增 RTL 一律放这里 |
+| `constraints/` | `cpu.xdc`（CPU 约束）、`ego1.xdc`（官方全量参考） | 新增约束放这里 |
+| `sim/` | `tb_cpu.v` 等 testbench | 新增 tb 放这里 |
+| `tests/hex/` | `test_prog.hex`（IMEM 初始化） | 汇编生成的 .hex/.mem 放这里 |
+
+| 进 git（可移植纯文本） | 不进 git（本地生成，已被 .gitignore 忽略） |
 |---|---|
-| `cpu_single/cpu_single.srcs/` 全部（10 个 .v + cpu.xdc + tb_cpu.v + test_prog.hex） | `*.xpr` 工程文件 |
-| `constraints/` `design/` 文档 | `cpu_single.cache/` `cpu_single.runs/` `cpu_single.hw/` `cpu_single.sim/` 编译产物 |
-| `tests/` 汇编源与 `.mem`/`.hex` | `cpu_single.ip_user_files/` `cpu_single.ipdefs/` |
-| `doc/` 课程资料 | `*.bit` `*.jou` `*.log` `*.rpt` 等生成物 |
+| `rtl_single_cycle/` 全部 .v | `*.xpr` 工程文件 |
+| `constraints/` `sim/` `tests/hex/` | `cpu_single.cache/` `cpu_single.runs/` `cpu_single.hw/` `cpu_single.sim/` |
+| `design/` 文档、`doc/` 课程资料 | `cpu_single.ip_user_files/` `cpu_single.ipdefs/` |
+| | `*.bit` `*.jou` `*.log` `*.rpt` 等生成物 |
 
-**工程实体的现状（2026-10-16）**：`cpu_single/` 已是完整可用的 Vivado 工程（目录即工程形态，含已完成的综合实现产物）。git 里只保留其中 `.srcs/` 下的 **13 个源文件**（`.gitignore` 已按此过滤，`git add` 干跑验证过）。每人拉取后在本机重建工程容器即可——源码以「导入」方式进了 `.srcs`，与工程容器无路径耦合。
+**「导入式」与「引用式」的区别（2026-10-16 已改为引用式）**：最初源码被 Vivado「导入（copy）」进 `.srcs/`，导致同一份源码存在两处、git 里的路径带工程前缀。现已迁出为独立目录，工程改为**引用（reference）**这些路径——改源文件立即生效、无两份同步问题、新增文件直接放进上述目录再 Add 即可。
 
-**每人首次建工程（一次性，约 2 分钟）**，两种方式任选：
+**每人建/重建工程（一次性，约 2 分钟）**：Vivado GUI → Create Project（RTL 项目）→ Part 选 `xc7a35tcsg324-1` → Add Sources 时**取消勾选「Copy sources into project」**（关键，这就是导入式与引用式的分界���→ Design Sources 加 `rtl_single_cycle/` 全部 .v → Constraints 加 `constraints/cpu.xdc` → Simulation Sources 加 `sim/tb_cpu.v`。`test_prog.hex` 放在工程运行目录可见处（或在 imem.v 的 `IMEM_FILE` 宏里给绝对/相对路径）。
 
-- **方式 A（推荐）**：Vivado GUI → Create Project（RTL 项目）→ Part 选 `xc7a35tcsg324-1` → Add Sources 加入 `cpu_single/cpu_single.srcs/sources_1/imports/single_cycle/` 全部 .v → 约束加入 `constrs_1/imports/constraints/cpu.xdc` → 仿真源加入 `sim_1/imports/single_cycle/`（tb_cpu.v 与 test_prog.hex）
-- **方式 B**：直接用 `git clone` 后在 Vivado 里打开 `.srcs` 对应路径新建工程，源码用「引用」而非「拷贝」方式添加，改完直接 commit
-
-之后日常「改 .v → 仿真 → 综合 → 烧录」全在各自 GUI 里做；`.srcs` 下的源码改动照常 `git add/commit/push`，工程容器的变化一律不提交。
+> ⚠️ `cpu_single/` 工程容器目前引用的还是迁出前的旧路径（已失效），待在 Vivado 里移除旧源引用、按上述步骤重新挂新路径后即可继续用；或删掉整个目录按步骤重建。工程容器的任何变化一律不提交。
 
 **版本兼容注意（写代码时遵守）**：
 
