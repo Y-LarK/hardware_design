@@ -13,9 +13,9 @@
 
 | 路径                  | 内容                                                             |
 | --------------------- | ---------------------------------------------------------------- |
-| `rtl_single_cycle/`   | CPU RTL 模块；新增 RTL 模块放在这里                              |
-| `constraints/`        | Vivado XDC 约束；`cpu.xdc` 用于当前 CPU 顶层                     |
-| `sim/`                | Verilog testbench                                                |
+| `rtl_single_cycle/`   | CPU RTL 模块；新增 RTL 模块放在这里（glob 自动纳入工程）         |
+| `constraints/`        | Vivado XDC 约束；`cpu.xdc` 用于当前 CPU 顶层。该目录下**所有** `.xdc` 都会被 glob 纳入且全部生效，勿放仅供参考的约束 |
+| `sim/`                | Verilog testbench（glob 自动纳入工程）                           |
 | `tests/asm/`          | GNU LoongArch 汇编测试源及 Makefile                              |
 | `tests/hex/`          | `$readmemh` 使用的程序镜像；由汇编源生成，构建所需且纳入版本控制 |
 | `scripts/`            | Vivado Tcl、Linux 和 Windows 构建/烧录脚本                       |
@@ -31,7 +31,8 @@
 - 保持复位极性、同步方式和时钟行为与现有模块一致；当前 CPU 内部复位为低有效 `rst_n`。不要在局部重构中改变板级接口或时钟分频约定。
 - 指令字段、立即数扩展、分支/跳转偏移、访存宽度和 MMIO 地址都属于体系结构行为。修改解码或数据通路时，先查阅 `design/DESIGN.md` 和相关模块，再同步更新汇编用例/镜像与文档。
 - `imem.v` 通过 `IMEM_FILE` 宏装载程序。Vivado 构建必须保留该宏和有效的 `tests/hex/test_all.hex` 输入；不要把 `.s` 文件加入 Vivado 工程，GNU 汇编源应先生成 hex。
-- 新增 RTL 文件放进 `rtl_single_cycle/`，`scripts/build.tcl` 会扫描该目录的 `.v` 文件。若使用 GUI 工程，运行 `scripts/create_project.tcl` 同步工程源文件。
+- 新增 RTL 文件放进 `rtl_single_cycle/`，`scripts/build.tcl` 会扫描该目录的 `.v` 文件。`constraints/*.xdc`、`sim/*.v`、`tests/hex/*.hex` 同样是 glob 扫描。若使用 GUI 工程，运行 `scripts/create_project.tcl` 同步工程源文件（增删文件后重跑即可）。
+- hex 文件"登记进工程"与"被当作当前程序"是两回事：前者由 glob 自动完成，后者由 `IMEM_FILE` 宏决定。换测试程序必须改 `tests/asm/Makefile` 与 `build.tcl`/`create_project.tcl` 里的 `$hex`，只放新 hex 进目录不会生效且无提示。
 - 不做与任务无关的重排、全文件格式化或接口重命名，便于 review 并避免跨平台编码差异。
 
 ## Git 规范
@@ -64,7 +65,7 @@ make -C tests/asm disasm
 Windows 使用 `scripts/build.bat`，可传入 `program` 参数。需要 GNU LoongArch binutils（`loongarch64-linux-gnu-as`、`objcopy`、`objdump`）和 Vivado；Vivado 的 `bin` 目录需在 `PATH` 中（Linux 脚本也会尝试常见安装路径）。
 
 - 构建入口：`scripts/build.sh` / `scripts/build.bat` → `scripts/build.tcl`。
-- 构建脚本先执行 `make -C tests/asm`，然后以非工程模式读取 `rtl_single_cycle/*.v`、`constraints/cpu.xdc` 和测试 hex，目标器件为 `xc7a35tcsg324-1`，顶层为 `cpu_board`。
+- 构建脚本先执行 `make -C tests/asm`，然后以非工程模式读取 `rtl_single_cycle/*.v`、`constraints/*.xdc` 和测试 hex，目标器件为 `xc7a35tcsg324-1`，顶层为 `cpu_board`。
 - 生成文件位于 `out/`，包括 `out/cpu_board.bit`、Vivado 日志和报告；它们是本地产物，不加入 Git。
 - 上板前检查综合日志中 `$readmemh` 成功读取程序文件的提示。若文件不存在或装载失败，不要把“bitstream 已生成”当作构建有效。
 - 不要在未确认目标板和硬件连接的情况下调用烧录命令。
@@ -72,7 +73,7 @@ Windows 使用 `scripts/build.bat`，可传入 `program` 参数。需要 GNU Loo
 ### GUI 工程与批处理仿真
 
 - `scripts/create_project.tcl`（Windows 有 `.bat` 封装）用于生成/增量更新本地 `cpu_single/cpu_single.xpr`；工程不进 Git。
-- `scripts/simulate.tcl` 依赖上述 GUI 工程已创建，并运行行为仿真。修改 `tests/asm/test_all.s` 后应先运行 `make -C tests/asm`；GUI 工程模式下若程序镜像变化未被重新读取，按 `design/BUILD.md` 的说明重置综合运行。
+- 行为仿真在 **Vivado GUI** 里跑：打开上述工程 → Flow Navigator → Simulation → Run Behavioral Simulation。修改 `tests/asm/test_all.s` 后应先运行 `make -C tests/asm`；GUI 工程模式下若程序镜像变化未被重新读取，按 `design/BUILD.md` 的说明重置综合运行。
 - `sim/tb_all.v` 通过 MMIO 写序列输出 PASS/FAIL 信息。调试波形时可用 Vivado GUI 打开本地工程。
 
 ## 建议工作流程

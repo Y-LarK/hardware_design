@@ -56,6 +56,8 @@ clockInfo.txt
 *.str
 *.pb
 htr.txt
+# webtalk 使用统计：build.tcl / program.tcl 每次运行都会往 cwd 写一份
+usage_statistics_webtalk.*
 
 # ---- 汇编中间产物（.s 与 .hex 才需要入库）----
 tests/asm/*.elf

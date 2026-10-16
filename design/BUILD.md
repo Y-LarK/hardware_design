@@ -25,8 +25,8 @@
 ```
 hardware_design/
 ├── rtl_single_cycle/     ← 全部 RTL 源码（10 个 .v），新增模块放这里
-├── constraints/          ← cpu.xdc（工程用）、ego1.xdc（官方全量参考）
-├── sim/                  ← tb_all.v（仿真平台）
+├── constraints/          ← 工程用的 .xdc（当前仅 cpu.xdc，整个目录会被 glob 纳入）
+├── sim/                  ← testbench（当前 tb_all.v，整个目录会被 glob 纳入）
 ├── tests/
 │   ├── asm/              ← test_all.s（汇编源）+ Makefile
 │   └── hex/              ← test_all.hex（由 asm 的 make 生成，勿手工改）
@@ -59,7 +59,6 @@ hardware_design/
 | 脚本 | 用途 | 何时用 |
 |------|------|--------|
 | `create_project.tcl` / `.bat` | 生成 / **增量同步** `.xpr` 工程 | 换机器、队友首次拉代码、增删 `.v` 后 |
-| `simulate.tcl` | 批处理仿真，只出 PASS/FAIL | 改完代码快速自查 |
 | `build.tcl` | 非工程模式：综合→实现→bit | 上板前 |
 | `build.sh` / `.bat` | 上面两个的封装，一键 | 日常构建、烧录 |
 | `program.tcl` | 烧录 bit 到开发板 | 上板 |
@@ -81,14 +80,11 @@ vivado -mode batch -source scripts/create_project.tcl
 # 1. 改代码（引用式，改完立即生效，无需在 Vivado 里重新 Add）
 vim rtl_single_cycle/alu.v
 
-# 2. 快速回归（几秒出 PASS/FAIL，不开 GUI）
-vivado -mode batch -source scripts/simulate.tcl
-
-# 3. 要细看波形 → 开 GUI
+# 2. 跑仿真看 PASS/FAIL 与波形 → 开 GUI
 vivado cpu_single/cpu_single.xpr
 #    Flow Navigator → Simulation → Run Simulation → Run Behavioral Simulation
 
-# 4. 上板（构建 + 烧录）
+# 3. 上板（构建 + 烧录）
 ./scripts/build.sh program
 ```
 
@@ -210,8 +206,7 @@ INFO: [Synth 8-3876] $readmem data file '...' is read successfully
 **非工程模式本就不受影响**——`build.tcl` 用 `glob` 每次重扫目录，增删自动生效。
 
 **Q：仿真跑起来只有 1000ns 就结束了？**
-批处理模式不会自动跑到底，必须显式 `run <时长>`。`simulate.tcl` 里已写 `run 20000ns`。
-GUI 里点 **Run All** 即可。
+GUI 里点 **Run All** 即可（默认只跑 1000ns，本程序需约 4500ns 才出结果）。
 
 **Q：`cpu_single/` 和 `out/` 要不要提交？**
 都不提交，`.gitignore` 已忽略。

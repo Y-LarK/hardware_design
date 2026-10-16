@@ -452,22 +452,23 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 
 ### 4.4 引脚约束
 
-已有 `constraints/ego1.xdc`（依元素官方约束文件，含全部外设）可直接复用。CPU 顶层需要的端口：
+官方全外设约束存于 `doc/ego1.xdc.txt`（依元素官方文件，含全部外设），供裁剪参考。**它不在 `constraints/` 里**——`constraints/*.xdc` 会被构建与工程脚本 glob 全部纳入工程，而该文件含大量本设计没有的端口，且注释用 `//`（XDC 用 Tcl 语法，注释符是 `#`），直接纳入会导致实现报错。CPU 顶层需要的端口：
 
-| 端口                                                            | 引脚来源              |
-| --------------------------------------------------------------- | --------------------- |
-| `sys_clk_in`                                                    | P17                   |
-| `sys_rst_n`                                                     | P15                   |
-| `led_pin[15:0]`                                                 | `ego1.xdc` LED 段     |
-| `seg_cs_pin[7:0]`、`seg_data_0_pin[7:0]`、`seg_data_1_pin[7:0]` | `ego1.xdc` 数码管段   |
-| `sw_pin[7:0]`、`dip_pin[7:0]`                                   | `ego1.xdc` 拨码开关段 |
-| `btn_pin[4:0]`                                                  | `ego1.xdc` 按键段     |
+| 端口                                                            | 引脚来源                          |
+| --------------------------------------------------------------- | --------------------------------- |
+| `sys_clk_in`                                                    | P17                               |
+| `sys_rst_n`                                                     | P15                               |
+| `led_pin[15:0]`                                                 | `doc/ego1.xdc.txt` LED 段         |
+| `seg_cs_pin[7:0]`、`seg_data_0_pin[7:0]`、`seg_data_1_pin[7:0]` | `doc/ego1.xdc.txt` 数码管段       |
+| `sw_pin[7:0]`、`dip_pin[7:0]`                                   | `doc/ego1.xdc.txt` 拨码开关段     |
+| `btn_pin[4:0]`                                                  | `doc/ego1.xdc.txt` 按键段         |
 
 **约束文件注意事项**：
 
-1. `ego1.xdc` 中大量使用 `//` 开头的注释。**XDC 是 Tcl 语法，注释符是 `#`**。本次验证跑通的是裁剪版 `toolchain_check/ego1_min.xdc`（全部用 `#` 注释），**官方 `ego1.xdc` 尚未进过综合流程**，`//` 是否被 Vivado 容忍属于未验证项。接入工程前先做一次综合验证，若报错则统一替换成 `#`
+1. `doc/ego1.xdc.txt` 中大量使用 `//` 开头的注释。**XDC 是 Tcl 语法，注释符是 `#`**。本次验证跑通的是裁剪版 `toolchain_check/ego1_min.xdc`（全部用 `#` 注释），该官方文件尚未进过综合流程，`//` 是否被 Vivado 容忍属于未验证项。裁进 `constraints/` 前先做一次综合验证，若报错则统一替换成 `#`
 2. 必须加时钟约束：`create_clock -period 10.000 -name sys_clk [get_ports sys_clk_in]`（见 `toolchain_check/ego1_min.xdc`）
 3. 只保留设计实际用到的端口约束；未使用的外设端口若出现在 XDC 中会导致实现报错
+4. **`constraints/` 下的每个 `.xdc` 都会被自动纳入工程并全部生效**，对同一端口重复约束会静默互相覆盖。新增约束前确认不与 `cpu.xdc` 冲突；"仅供参考"的约束不要放在这个目录
 
 ---
 
@@ -524,8 +525,8 @@ hardware_design/
 │   ├── GIT.md                 # 协作规范
 │   └── QUESTION.md            # 题目原文
 ├── rtl_single_cycle/          # 单周期 CPU 源码（10 个 .v，当前开发主线，新增 RTL 放这里）
-├── constraints/               # cpu.xdc（工程用）+ ego1.xdc（官方全量参考）
-├── sim/                       # testbench（tb_cpu.v）
+├── constraints/               # 工程用约束（当前仅 cpu.xdc；整个目录的 .xdc 会被 glob 纳入）
+├── sim/                       # testbench（当前 tb_all.v；整个目录的 .v 会被 glob 纳入）
 ├── tests/asm/                 # 汇编源（test_all.s + Makefile）
 ├── tests/hex/                 # IMEM 初始化文件（test_all.hex，由 asm 生成）
 ├── cpu_single/                # Vivado 工程容器（引用上面的源，整体不进 git）
@@ -572,8 +573,8 @@ hardware_design/
 │       ├── build.sh           # 汇编 + 链接 + objcopy → .mem
 │       └── refmodel.py        # Python 参考模型（逐条执行 + 结果比对）
 ├── constraints/
-│   ├── ego1.xdc               # 依元素官方全外设约束（已有）
-│   └── cpu.xdc                # CPU 工程实际使用的约束（从 ego1.xdc 裁剪）
+│   └── cpu.xdc                # CPU 工程实际使用的约束（从官方全外设约束裁剪）
+│                              #   官方全量版在 doc/ego1.xdc.txt，故意不放这里
 ├── .gitignore                 # 忽略 Vivado 工程与生成物（见 §6.1）
 ├── doc/                       # 课程资料（已有：开发板手册、电路图、课件图）
 └── toolchain_check/           # 工具链验证工程（已有，保留作参考）
@@ -597,9 +598,9 @@ hardware_design/
 
 | 目录                | 内容                                              | 说明                                       |
 | ------------------- | ------------------------------------------------- | ------------------------------------------ |
-| `rtl_single_cycle/` | 单周期 CPU 全部 10 个 .v                          | 新增 RTL 一律放这里                        |
-| `constraints/`      | `cpu.xdc`（CPU 约束）、`ego1.xdc`（官方全量参考） | 新增约束放这里                             |
-| `sim/`              | `tb_all.v`（上板自检仿真平台）                    | 新增 tb 放这里                             |
+| `rtl_single_cycle/` | 单周期 CPU 全部 10 个 .v                          | 新增 RTL 一律放这里（glob 自动纳入）       |
+| `constraints/`      | `cpu.xdc`（CPU 约束）                             | 新增约束放这里（glob 自动纳入且全部生效）  |
+| `sim/`              | `tb_all.v`（上板自检仿真平台）                    | 新增 tb 放这里（glob 自动纳入）            |
 | `tests/asm/`        | `test_all.s`（汇编源）+ `Makefile`                | 新增测试程序放这里                         |
 | `tests/hex/`        | `test_all.hex`（IMEM 初始化）                     | 由 `tests/asm/` 的 `make` 生成，勿手工编辑 |
 
@@ -665,7 +666,7 @@ vivado -mode batch -source scripts/create_project.tcl
 > **芯片型号的两种写法**（同一颗芯片，勿混淆）：
 >
 > - **Vivado part 名**：`xc7a35tcsg324-1` —— 小写、速度等级在末尾。**脚本与约束里必须用这个**（`build.tcl` 即此写法）
-> - **Xilinx 订货型号**：`XC7A35T-1CSG324C` —— 速度等级 `-1` 插在器件与封装之间，末尾 `C` 为温度等级（商业级 0~85 °C）。**报告、PPT、文档叙述用这个**（`ego1.xdc` 头部注释即此写法）
+> - **Xilinx 订货型号**：`XC7A35T-1CSG324C` —— 速度等级 `-1` 插在器件与封装之间，末尾 `C` 为温度等级（商业级 0~85 °C）。**报告、PPT、文档叙述用这个**（`doc/ego1.xdc.txt` 头部注释即此写法）
 >
 > 实测确认（Vivado 2023.2）：`get_parts xc7a35tcsg324-1` → `DEVICE=xc7a35t`、`PACKAGE=csg324`、`SPEED=-1`
 
