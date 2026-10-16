@@ -563,7 +563,7 @@ hardware_design/
 - **仿真器差异**：若一边用 Vivado Simulator 一边用 iverilog，testbench 避免只用某一家支持的系统任务；`$readmemh`、`$display`、`$finish` 等标准任务两边通用
 - **源码文件编码**：现有 .v 的中文注释是 **GBK**（Windows 侧创建），Linux 下直接看是乱码。git 按字节存储不受影响，但跨平台编辑时注意别让编辑器把整个文件转码造成全文件 diff；新写的文件统一 UTF-8，旧文件动到哪行顺手机械转码到哪行即可，不做全量转码
 
-**git 纪律**：push 前先 `git pull --rebase`（已发生过一次网页编辑与本地提交的分叉）；`.gitignore` 已配置好，`git add` 前用 `git status` 确认没有把工程生成物带进来
+**git 纪律**：push 前�� `git pull --rebase`（已发生过一次网页编辑与本地提交的分叉）；`.gitignore` 已配置好，`git add` 前用 `git status` 确认没有把工程生成物带进来。**完整的分支模型、commit message 规范、提交边界、编码与冲突处理见 [GIT.md](GIT.md)**，本节只保留工程相关的协作要点。
 
 ---
 
