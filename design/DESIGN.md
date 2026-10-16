@@ -458,11 +458,19 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 
 ## 6. 工程结构
 
+> 下图为**规划目标形态**（流水线阶段起用 `rtl/`）。当前实际布局：单周期源码在 `cpu_single/cpu_single.srcs/`（见 §6.1），文档在 `design/`，课程资料在 `doc/`。
+
 ```
 hardware_design/
-├── DESIGN.md                  # 本文档
-├── QUESTION.md                # 题目原文
-├── rtl/
+├── design/
+│   ├── DESIGN.md              # 本文档
+│   └── QUESTION.md            # 题目原文
+├── cpu_single/                # 单周期 Vivado 工程（只提交 .srcs/ 下的源）
+│   └── cpu_single.srcs/
+│       ├── sources_1/imports/single_cycle/   # 10 个 .v（当前开发主线）
+│       ├── constrs_1/imports/constraints/cpu.xdc
+│       └── sim_1/imports/single_cycle/       # tb_cpu.v + test_prog.hex
+├── rtl/                       # 流水线版规划结构（阶段 3 起用）
 │   ├── cpu_top.v              # 顶层：流水线 + IMEM + DMEM + MMIO 译码
 │   ├── core/
 │   │   ├── pc.v               # PC（支持停顿 / 冲刷 / 跳转）
@@ -506,12 +514,50 @@ hardware_design/
 ├── constraints/
 │   ├── ego1.xdc               # 依元素官方全外设约束（已有）
 │   └── cpu.xdc                # CPU 工程实际使用的约束（从 ego1.xdc 裁剪）
-├── scripts/
-│   ├── build_cpu.tcl          # 综合→实现→生成比特流（参考 toolchain_check/build.tcl）
-│   └── program.tcl            # 下载到开发板
+├── .gitignore                 # 忽略 Vivado 工程与生成物（见 §6.1）
 ├── doc/                       # 课程资料（已有：开发板手册、电路图、课件图）
 └── toolchain_check/           # 工具链验证工程（已有，保留作参考）
 ```
+
+> **注**：仓库中**没有** Vivado 工程文件（`*.xpr`）。综合、实现、烧录全部在各自本机的 Vivado GUI 里完成，工程由每人按 §6.1 的步骤自行创建一次。也不再使用命令行 build/program 脚本。
+
+### 6.1 双人协作与工程管理（重要）
+
+**环境差异**：本机为 Fedora 44 + Vivado 2023.2，队友为 Windows + Vivado 2019.1。
+
+**为什么 `.xpr` 不能进 git**（三层原因，均为硬性障碍）：
+
+1. **版本单向升级**：Vivado 只能「新开旧」，不能「旧开新」。2023.2 打开并保存工程后 `.xpr` 即被升级，队友的 2019.1 **永远打不开**；反之 2019.1 建的工程，2023.2 每次打开都会强制升级，升级完他又打不开。**两台机器的工程文件根本无法互相共享**
+2. **绝对路径**：`.xpr` 记录创建机器上的路径（`C:/Users/...` vs `/home/ylk/...`），跨机器即失效
+3. **跨 OS 路径分隔符**：Windows `\` 与 Linux `/` 混在工程描述里，同版本也常出问题
+
+**解法（Xilinx 官方推荐的多机协作方式）：仓库只存「源」，不存「工程」**
+
+| 进 git（可移植纯文本） | 不进 git（每人在本机自建/生成） |
+|---|---|
+| `cpu_single/cpu_single.srcs/` 全部（10 个 .v + cpu.xdc + tb_cpu.v + test_prog.hex） | `*.xpr` 工程文件 |
+| `constraints/` `design/` 文档 | `cpu_single.cache/` `cpu_single.runs/` `cpu_single.hw/` `cpu_single.sim/` 编译产物 |
+| `tests/` 汇编源与 `.mem`/`.hex` | `cpu_single.ip_user_files/` `cpu_single.ipdefs/` |
+| `doc/` 课程资料 | `*.bit` `*.jou` `*.log` `*.rpt` 等生成物 |
+
+**工程实体的现状（2026-10-16）**：`cpu_single/` 已是完整可用的 Vivado 工程（目录即工程形态，含已完成的综合实现产物）。git 里只保留其中 `.srcs/` 下的 **13 个源文件**（`.gitignore` 已按此过滤，`git add` 干跑验证过）。每人拉取后在本机重建工程容器即可——源码以「导入」方式进了 `.srcs`，与工程容器无路径耦合。
+
+**每人首次建工程（一次性，约 2 分钟）**，两种方式任选：
+
+- **方式 A（推荐）**：Vivado GUI → Create Project（RTL 项目）→ Part 选 `xc7a35tcsg324-1` → Add Sources 加入 `cpu_single/cpu_single.srcs/sources_1/imports/single_cycle/` 全部 .v → 约束加入 `constrs_1/imports/constraints/cpu.xdc` → 仿真源加入 `sim_1/imports/single_cycle/`（tb_cpu.v 与 test_prog.hex）
+- **方式 B**：直接用 `git clone` 后在 Vivado 里打开 `.srcs` 对应路径新建工程，源码用「引用」而非「拷贝」方式添加，改完直接 commit
+
+之后日常「改 .v → 仿真 → 综合 → 烧录」全在各自 GUI 里做；`.srcs` 下的源码改动照常 `git add/commit/push`，工程容器的变化一律不提交。
+
+**版本兼容注意（写代码时遵守）**：
+
+- `xc7a35t` 在 2019.1 即完整支持，器件层面无障碍
+- RTL 统一用 **Verilog-2001 / 常用 SystemVerilog 子集**，避免 2019.1 不支持的过新语法；每次提交前确认写法在两边都能综合
+- 约束文件语法两边通用（XDC 基于 Tcl，无版本问题）
+- **仿真器差异**：若一边用 Vivado Simulator 一边用 iverilog，testbench 避免只用某一家支持的系统任务；`$readmemh`、`$display`、`$finish` 等标准任务两边通用
+- **源码文件编码**：现有 .v 的中文注释是 **GBK**（Windows 侧创建），Linux 下直接看是乱码。git 按字节存储不受影响，但跨平台编辑时注意别让编辑器把整个文件转码造成全文件 diff；新写的文件统一 UTF-8，旧文件动到哪行顺手机械转码到哪行即可，不做全量转码
+
+**git 纪律**：push 前先 `git pull --rebase`（已发生过一次网页编辑与本地提交的分叉）；`.gitignore` 已配置好，`git add` 前用 `git status` 确认没有把工程生成物带进来
 
 ---
 
@@ -519,7 +565,7 @@ hardware_design/
 
 | 项 | 状态 | 备注 |
 |----|------|------|
-| Vivado | **2023.2**，已安装可用 | 启动器已配好（kitty + Java AWT 修复） |
+| Vivado | **2023.2**，已安装可用 | 启动器已配好（kitty + Java AWT 修复）。**队友环境为 Windows + Vivado 2019.1**，协作方式见 §6.1 |
 | 综合实现流程 | **已验证跑通** | `toolchain_check/build.tcl` 非工程批处理模式，生成 .bit 成功 |
 | 时序 | `led_blink` @ 100 MHz：**WNS = +5.75 ns**，0 failing endpoint | 说明器件余量充足 |
 | 器件 | `xc7a35tcsg324-1`，EGO1 = Artix-7 XC7A35T-1CSG324C | 50 BRAM / 90 DSP / 20800 LUT |

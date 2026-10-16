@@ -1,14 +1,64 @@
-# Vivado / 工具链生成物
+# ============================================================
+# 只提交「源」：RTL / 约束 / testbench / 测试程序 / 文档
+# Vivado 工程容器（.xpr 与各类生成目录）不进 git，
+# 每人拉取后按 DESIGN.md §6.1 自建/重新定位工程
+# ============================================================
+
+# ---- Vivado 工程文件 ----
+*.xpr
+*.xpr_ini
+*.wpc
+*.str
+archive_project_summary.txt
+
+# ---- Vivado 生成目录：两种命名形态都覆盖 ----
+# 形态 A「目录即工程」：cpu_single.cache/ cpu_single.runs/ ...
+*.cache/
+*.runs/
+*.hw/
+*.sim/
+*.ip_user_files/
+*.ipdefs/
+# 形态 B「工程目录内带点前缀」：.cache/ .runs/ ...
+.cache/
+.runs/
+.hw/
+.sim/
+.ip_user_files/
+.ipdefs/
 .Xil/
+
+# ---- Vivado 运行生成物 ----
 *.jou
 *.log
 *.rpt
 *.bit
 *.wdb
-*.cache/
-*.backup.jou
-*.backup.log
+*.ltx
+*.mmi
 vivado_*.backup.*
+vivado*.backup.jou
+vivado*.backup.log
+upgrade_project_migration_report.log
+*.bak
 
-# 操作系统
+# ---- 提交白名单（覆盖上面的忽略规则）----
+# 测试程序的存储器初始化文件是重新生成比特流的必要输入，必须进 git：
+!cpu_single/cpu_single.srcs/**/*.hex
+!cpu_single/cpu_single.srcs/**/*.mem
+!tests/hex/*.mem
+!tests/hex/*.hex
+
+# ---- 仿真临时产物 ----
+sim/work/
+sim/*.vvp
+*.vcd
+*.out
+
+# ---- 编辑器 / 操作系统 ----
+.vscode/
+.idea/
+*.swp
+*~
 .DS_Store
+Thumbs.db
