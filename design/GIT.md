@@ -3,7 +3,7 @@
 > 适用仓库：`hardware_design`（GitHub 私有仓库 `Y-LarK/hardware_design`，SSH 协议）
 > 成员：2 人（Fedora 44 + Vivado 2023.2 ／ Windows + Vivado 2019.1）
 > 建立日期：2026-10-16
-> 相��文档：[DESIGN.md](DESIGN.md) §6.1（工程管理）、§6（目录结构）
+> 相关文档：[DESIGN.md](DESIGN.md) §6.1（工程管理）、§6（目录结构）
 
 ---
 
@@ -90,7 +90,7 @@ git diff --staged --stat      # 提交前最后过目
 
 - **新文件一律 UTF-8**（RTL 注释、文档、脚本）
 - 旧文件（Windows 侧创建）部分是 GBK 注释：git 按字节存不受影响，但**编辑旧文件时别让编辑器整文件转码**（会造成全文件 diff，淹没真实改动）。VS Code 右下角确认编码；动了哪行就只改哪行
-- 行尾：仓库**不设** `.gitattributes` 的 autocrlf 转换（跨 Windows/Linux 双向转换反而制造 diff），提交什么字节就存什么字节。Windows 侧编辑��若自动转 CRLF，提交前注意 `git diff` 是否出现全行变更
+- 行尾：仓库**不设** `.gitattributes` 的 autocrlf 转换（跨 Windows/Linux 双向转换反而制造 diff），提交什么字节就存什么字节。Windows 侧编辑器若自动转 CRLF，提交前注意 `git diff` 是否出现全行变更
 
 ## 5. 推拉纪律（避免分叉）
 
