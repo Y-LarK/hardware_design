@@ -1,7 +1,7 @@
 # ============================================================
-# 只提交「源」：RTL / 约束 / testbench / 测试程序 / 文档
-# Vivado 工程容器（.xpr 与各类生成目录）不进 git，
-# 每人拉取后按 DESIGN.md §6.1 自建/重新定位工程
+# 只提交「源」：RTL / 约束 / testbench / 测试程序 / 脚本 / 文档
+# 构建改为「非工程模式脚本」（scripts/build.sh|bat），不再需要 .xpr 工程，
+# 故 Vivado 生成目录可全部忽略。新增 .v 由脚本自动 glob，无需登记。
 # ============================================================
 
 # ---- Vivado 工程文件 ----
@@ -47,9 +47,25 @@ upgrade_project_migration_report.log
 !tests/hex/*.mem
 !tests/hex/*.hex
 
+# ---- 非工程模式构建输出 ----
+out/
+
+# ---- Vivado 启动时散落在「当前工作目录」的日志与临时文件 ----
+# 这些不是工程产物，是 Vivado 每次启动自动写的，删了无妨
+clockInfo.txt
+*.str
+*.pb
+htr.txt
+
+# ---- 汇编中间产物（.s 与 .hex 才需要入库）----
+tests/asm/*.elf
+tests/asm/*.bin
+tests/asm/*.o
+
 # ---- 仿真临时产物 ----
 sim/work/
 sim/*.vvp
+sim/*.out
 *.vcd
 *.out
 
