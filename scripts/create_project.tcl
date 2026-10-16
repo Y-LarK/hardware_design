@@ -23,7 +23,30 @@
 #
 # 【重要】本脚本是幂等的：工程不存在则新建；已存在则**增量同步**
 #   （补加缺失文件、移除失效引用），**不重建、不丢 GUI 设置**。
-#   所以新增或删除 .v 之后，随时重跑本脚本同步即可。
+#   所以新增或删除源文件之后，随时重跑本脚本同步即可。
+#
+# 【自动同步的范围】四个目录都是 glob 通配，新增同后缀文件即自动纳入：
+#   rtl_single_cycle/*.v   -> sources_1
+#   constraints/*.xdc      -> constrs_1   （通配！新增 xdc 前先读下方【约束】）
+#   sim/*.v                -> sim_1       （通配）
+#   tests/hex/*.hex        -> sim_1       （通配，仅为便于查阅，见下方【关键】）
+#   glob 是非递归的：这些文件必须平铺在各自目录下，子目录不会被扫到。
+#
+# 【关键】hex 登记进工程 ≠ 被当作当前程序！
+#   登记（add_files）只是把文件挂在工程里便于查阅；**真正决定跑哪个程序的是
+#   IMEM_FILE 宏**（见下方 §设 IMEM_FILE 宏 与 DESIGN.md §3.5.1）。
+#   imem.v 靠 `IMEM_FILE 指定的那一个文件做 $readmemh。
+#   所以 tests/hex/ 下多出 test_alu.hex 时：它会被自动"登记"进工程，但综合
+#   和仿真**仍然读 test_all.hex**，且不作任何提示 —— 表现为"改了程序没生效"。
+#   要用别的程序，必须同时改三处（Makefile 的 SRC/HEX、本脚本的 $hex）：
+#     tests/asm/Makefile   SRC := test_alu.s   HEX := ../hex/test_alu.hex
+#     scripts/create_project.tcl  set hex ...test_alu.hex
+#     scripts/build.tcl           set hex ...test_alu.hex
+#
+# 【约束】constraints/ 通配后，目录下**任何** .xdc 都会进工程。
+#   注意 Vivado 会同时应用所有 xdc，对同一端口重复约束会静默互相覆盖。
+#   放置"仅供参考"的官方约束请用非 .xdc 后缀（如 doc/ 下的 .xdc.txt），
+#   不要留在 constraints/ 里。
 #
 # 【注意】汇编源 tests/asm/test_all.s **故意不加入工程** —— Vivado 会用
 #   内置汇编器编译它并报错（详见文件末尾说明）。
@@ -88,8 +111,10 @@ if {$exists} {
         return $added
     }
     set n1 [add_missing [glob -nocomplain [file join $root rtl_single_cycle *.v]] sources_1]
-    set n2 [add_missing [list [file join $root constraints cpu.xdc]] constrs_1]
-    set n3 [add_missing [list [file join $root sim tb_all.v] $hex] sim_1]
+    set n2 [add_missing [glob -nocomplain [file join $root constraints *.xdc]] constrs_1]
+    set n3 [add_missing [concat \
+        [glob -nocomplain [file join $root sim *.v]] \
+        [glob -nocomplain [file join $root tests hex *.hex]]] sim_1]
     puts "  共补加 [expr {$n1+$n2+$n3}] 个文件"
 } else {
     # ---- 工程不存在：新建 ----
@@ -100,10 +125,10 @@ if {$exists} {
     # 1. RTL（引用式，不拷贝进工程）
     add_files -norecurse [glob -nocomplain [file join $root rtl_single_cycle *.v]]
     # 2. 约束
-    add_files -norecurse -fileset constrs_1 [file join $root constraints cpu.xdc]
+    add_files -norecurse -fileset constrs_1 [glob -nocomplain [file join $root constraints *.xdc]]
     # 3. testbench 与 hex（sim_1 文件集）
-    add_files -norecurse -fileset sim_1 [file join $root sim tb_all.v]
-    add_files -norecurse -fileset sim_1 $hex
+    add_files -norecurse -fileset sim_1 [glob -nocomplain [file join $root sim *.v]]
+    add_files -norecurse -fileset sim_1 [glob -nocomplain [file join $root tests hex *.hex]]
 }
 
 # ---- 关于汇编源 $asm：**故意不加入工程** ----

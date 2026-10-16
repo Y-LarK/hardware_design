@@ -26,6 +26,8 @@ cd $root
 set part    xc7a35tcsg324-1
 set top     cpu_board
 set rtl_dir rtl_single_cycle
+# 当前程序：改测试程序时**必须**同步改这里和 create_project.tcl 的 $hex，
+# 以及 tests/asm/Makefile 的 SRC/HEX —— 只改汇编源不会自动生效（见 DESIGN.md §3.5.1）
 set hex     $root/tests/hex/test_all.hex
 set out_dir $root/out
 
@@ -49,7 +51,10 @@ puts "读入 RTL（[llength $rtl_files] 个文件）："
 foreach f $rtl_files { puts "  [file tail $f]" }
 read_verilog $rtl_files
 
-read_xdc [file join $root constraints cpu.xdc]
+# 约束也用 glob：与 create_project.tcl 的 constrs_1 范围保持一致，
+# 否则工程模式与非工程模式读的 xdc 不同，两边综合结果可能不一致。
+# 注意：目录下**所有** .xdc 都会生效，官方全量参考约束请放 constraints/ 之外。
+read_xdc [glob -nocomplain [file join $root constraints *.xdc]]
 
 # 配置存不存在由脚本保证 —— §3.5.1 的教训：$readmemh 失败只报 CRITICAL WARNING，
 # bit 流照常生成，结果是空 IMEM + 上板全黑。这里显式检查，缺文件直接中止。
