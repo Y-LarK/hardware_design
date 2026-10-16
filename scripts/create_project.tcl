@@ -21,8 +21,12 @@
 #   3. 设 IMEM_FILE 宏（综合与仿真都要，否则 imem 装配不到程序）
 #   4. 指定顶层
 #
-# 【重要】每次新增 .v 文件后，重跑本脚本即可（加 -force 会重建工程）；
-#   轻量做法：在 GUI 里 Add Sources 手动加上那一个文件。
+# 【重要】本脚本是幂等的：工程不存在则新建；已存在则**增量同步**
+#   （补加缺失文件、移除失效引用），**不重建、不丢 GUI 设置**。
+#   所以新增或删除 .v 之后，随时重跑本脚本同步即可。
+#
+# 【注意】汇编源 tests/asm/test_all.s **故意不加入工程** —— Vivado 会用
+#   内置汇编器编译它并报错（详见文件末尾说明）。
 # ============================================================================
 
 set script_dir [file dirname [file normalize [info script]]]
@@ -101,6 +105,16 @@ if {$exists} {
     add_files -norecurse -fileset sim_1 [file join $root sim tb_all.v]
     add_files -norecurse -fileset sim_1 $hex
 }
+
+# ---- 关于汇编源 $asm：**故意不加入工程** ----
+# 曾尝试把 tests/asm/test_all.s 挂进工程供 GUI 查阅，但 Vivado 会把它当作
+# ASM 源**用内置汇编器编译**（本文件是 GNU as 语法，报 no such instruction），
+# 导致仿真/综合直接失败；改 file_type 为 Document 不被支持，设 is_enabled=false
+# 对 sim_1 也无效。因此不再加入工程——需要看汇编源时，用编辑器打开
+# tests/asm/test_all.s 即可。
+#
+# 切记：$readmemh 装载的是 $hex 而非 $asm。改了 .s 必须在 tests/asm/ 下
+# make 重新生成 hex，否则综合/仿真用的仍是旧程序，且不会有任何提示。
 
 # ---- IMEM_FILE 宏（两种路径都要设）----
 # 综合与仿真都必须设：imem.v 靠它找到程序文件。

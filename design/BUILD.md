@@ -92,15 +92,37 @@ vivado cpu_single/cpu_single.xpr
 ./scripts/build.sh program
 ```
 
-### 3.3 改测试程序
+### 3.3 改测试程序（**两步链，容易出错**）
+
+汇编源与 Vivado 之间隔着一次转换，**Vivado 看不到 `.s`**：
+
+```
+tests/asm/test_all.s   ← 你手写的汇编源（GNU as 语法）
+        │  make -C tests/asm
+        ▼
+tests/hex/test_all.hex ← Vivado 唯一认的（$readmemh 装载）
+```
 
 ```bash
 vim tests/asm/test_all.s
-make -C tests/asm          # 生成 tests/hex/test_all.hex
-# 注意：改了 hex 必须重跑综合，Vivado 不会自动感知
+make -C tests/asm          # ← 忘了这步，Vivado 跑的还是旧程序，且无任何提示
 ```
 
-`build.sh` 已包含 `make` 步骤，用脚本构建时无需手动执行。
+`build.sh` 已包含 `make`，用脚本构建时无需手动执行。
+
+**改了 hex 之后，工程模式必须 Reset 综合**（Vivado 不感知 hex 内容变化）：
+
+```
+Flow Navigator → SYNTHESIS → Reset Synthesis Run → Run Synthesis
+```
+
+> ⚠️ **不要把 `.s` 加进 Vivado 工程**。曾试过以便在 GUI 里查阅，结果 Vivado 会拿
+> **内置汇编器**去编译它（本文件是 GNU as 语法，含标签与伪指令），报
+> `no such instruction` 并使仿真/综合失败。改 `file_type` 为 `Document` 不被支持，
+> 设 `is_enabled=false` 对 `sim_1` 也无效。要看汇编源，直接用编辑器打开即可。
+>
+> 若已误加并导致失败：从工程移除该文件后，**还要删掉仿真缓存目录**
+> `cpu_single/cpu_single.sim/`（里面残留 `*_asm.prj` 会继续触发错误）。
 
 ---
 
@@ -193,6 +215,10 @@ GUI 里点 **Run All** 即可。
 
 **Q：`cpu_single/` 和 `out/` 要不要提交？**
 都不提交，`.gitignore` 已忽略。
+
+**Q：改了汇编源，Vivado 里却没变化？**
+两步链：`.s` 要 `make` 成 `.hex`，工程模式还要 **Reset Synthesis Run** 重新装载。
+详见 §3.3。
 
 ---
 
