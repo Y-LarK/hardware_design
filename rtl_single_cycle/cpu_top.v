@@ -98,7 +98,7 @@ module cpu_top (
 
     // ================= 分支 / 跳转 / 下一 PC =================
     wire [15:0] offs16 = instr[25:10];   // 2RI16 偏移
-    wire [25:0] offs26 = instr[25:0];    // I26 偏移
+    wire [25:0] offs26 = {instr[9:0], instr[25:10]};    // I26 偏移
 
     // 分支目标：pc + sext(offs16) << 2（基准 = 本条指令 PC，不是 PC+4！）
     wire [31:0] branch_target = pc + {{14{offs16[15]}}, offs16, 2'b00};

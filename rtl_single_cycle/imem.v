@@ -20,7 +20,7 @@ module imem (
     // 程序初始化：$readmemh 把十六进制机器码文件装入 IMEM
     // 文件默认放在工程根目录（综合/仿真时把 .mem/.hex 放在运行目录即可）
     `ifndef IMEM_FILE
-    `define IMEM_FILE "test_prog.hex"
+    `define IMEM_FILE "test_all.hex"
     `endif
     initial $readmemh(`IMEM_FILE, mem);
 

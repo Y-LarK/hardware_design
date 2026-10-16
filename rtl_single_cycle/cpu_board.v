@@ -29,7 +29,7 @@ module cpu_board (
     // 下收敛。因此上板时钟可配置：
     //   CLK_DIV = 1   -> 100 MHz 直连（跑不含除法的演示程序）
     //   CLK_DIV = N   -> 100/N MHz（跑含 MUL/DIV 的全指令自检程序，如 N=100 -> 1 MHz）
-    parameter CLK_DIV = 1;
+    parameter CLK_DIV = 100;
 
     reg [15:0] clk_cnt;
     reg        cpu_clk;
