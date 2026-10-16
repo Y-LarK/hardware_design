@@ -1,51 +1,95 @@
 @echo off
 REM ============================================================================
-REM create_project.bat â€”â€” ä¸€é”®åˆ›å»º Vivado å·¥ç¨‹ï¼ˆWindows ç”¨ï¼‰
+REM create_project.bat ¡ª¡ª Ò»¼ü´´½¨ Vivado ¹¤³Ì£¨Windows ÓÃ£©
 REM ----------------------------------------------------------------------------
-REM ç”¨æ³•ï¼šåŒå‡»æœ¬æ–‡ä»¶å³å¯ï¼ˆæˆ–åœ¨ cmd ä¸­æ‰§è¡Œ scripts\create_project.batï¼‰
+REM ÓÃ·¨£ºË«»÷±¾ÎÄ¼ş¼´¿É£¨»òÔÚ cmd ÖĞÖ´ĞĞ scripts\create_project.bat£©
 REM
-REM ä½œç”¨ï¼šç”Ÿæˆ cpu_single\cpu_single.xprï¼Œä¹‹åç”¨ Vivado GUI æ‰“å¼€å®ƒå³å¯
-REM       è·‘ä»¿çœŸã€çœ‹æ³¢å½¢ã€ç»¼åˆå®ç°ã€‚
+REM ×÷ÓÃ£ºÉú³É cpu_single\cpu_single.xpr£¬Ö®ºóÓÃ Vivado GUI ´ò¿ªËü¼´¿É
+REM       ÅÜ·ÂÕæ¡¢¿´²¨ĞÎ¡¢×ÛºÏÊµÏÖ¡£
 REM
-REM ã€ä¸ºä»€ä¹ˆéœ€è¦è¿™ä¸ªè„šæœ¬ã€‘
-REM   .xpr å·¥ç¨‹æ–‡ä»¶ä¸èƒ½è¿› gitï¼ˆVivado ç‰ˆæœ¬å•å‘å‡çº§ + ç»å¯¹è·¯å¾„ + è·¨ OS åˆ†éš”ç¬¦ï¼‰ï¼Œ
-REM   æ‰€ä»¥çº¦å®šï¼šä»“åº“åªå­˜æºæ–‡ä»¶ï¼Œå·¥ç¨‹å„äººç”¨æœ¬è„šæœ¬è‡ªåŠ¨ç”Ÿæˆä¸€æ¬¡ã€‚
-REM   è¯¦è§ design/BUILD.md
+REM ¡¾ÎªÊ²Ã´ĞèÒªÕâ¸ö½Å±¾¡¿
+REM   .xpr ¹¤³ÌÎÄ¼ş²»ÄÜ½ø git£¨Vivado °æ±¾µ¥ÏòÉı¼¶ + ¾ø¶ÔÂ·¾¶ + ¿ç OS ·Ö¸ô·û£©£¬
+REM   ËùÒÔÔ¼¶¨£º²Ö¿âÖ»´æÔ´ÎÄ¼ş£¬¹¤³Ì¸÷ÈËÓÃ±¾½Å±¾×Ô¶¯Éú³ÉÒ»´Î¡£
+REM   Ïê¼û design/BUILD.md
 REM
-REM å‰ç½®ï¼šVivado å·²å®‰è£…ä¸” vivado.bat åœ¨ PATH ä¸­ã€‚
+REM Ç°ÖÃ£ºVivado ÒÑ°²×°¡£½Å±¾×Ô¶¯¶¨Î» vivado.bat£¬ÓÅÏÈ¼¶£º
+REM       VIVADO_BAT »·¾³±äÁ¿ > PATH > ³£¼û°²×°Î»ÖÃ£¨Ïê¼ûÏÂ·½¶¨Î»¶Î×¢ÊÍ£©¡£
 REM ============================================================================
 setlocal
 
 set SCRIPT_DIR=%~dp0
 set ROOT=%SCRIPT_DIR%..
-set VIVADO=vivado
 
-where %VIVADO% >nul 2>nul
-if errorlevel 1 (
-    echo ERROR: æ‰¾ä¸åˆ° vivadoï¼Œè¯·æŠŠ Vivado çš„ bin ç›®å½•åŠ å…¥ PATH
-    echo        æˆ–ç¼–è¾‘æœ¬è„šæœ¬ï¼ŒæŠŠ VIVADO è®¾ä¸ºå®Œæ•´è·¯å¾„ï¼Œä¾‹å¦‚ï¼š
-    echo        set VIVADO=C:\Xilinx\Vivado\2019.1\bin\vivado.bat
+REM ---- ¶¨Î» Vivado ----
+REM ¡¾ÎªÊ²Ã´²»ÄÜÖ»Ğ´ where vivado ÔÙµ÷ "%VIVADO%"¡¿
+REM   1) where Ö»°Ñ PATH ÌõÄ¿µ±¡¸Ä¿Â¼¡¹À´²éÕÒ¡£Èô PATH Àï¼ÓµÄÊÇ vivado.bat
+REM      ÎÄ¼ş±¾Éí¶ø²»ÊÇËüµÄ bin Ä¿Â¼£¬where ÕÒ²»µ½£¨PowerShell µÄ
+REM      Get-Command ·´¶øÄÜÕÒµ½£¬ÈİÒ×ÎóÅĞ³É»·¾³Ã»ÎÊÌâ£©¡£
+REM   2) vivado.bat ÄÚ²¿¿¿ %~dp0 ¶¨Î»×Ô¼ºµÄ setupEnv.bat£»ÓÃ¡¸´øÒıºÅµÄÂãÃû¡¹
+REM      µ÷ÓÃ£¨"%VIVADO%" ÇÒ VIVADO=vivado£©»áÈÃ×Ó½Å±¾µÄ %~dp0 ÍË»¯³Éµ±Ç°
+REM      ¹¤×÷Ä¿Â¼£¬vivado.bat ÓÚÊÇÈ¥ÕÒ <µ±Ç°Ä¿Â¼>\setupEnv.bat ¶øÆô¶¯Ê§°Ü¡£
+REM   ËùÒÔÕâÀïÍ³Ò»½âÎö³É¡¸ÍêÕûÂ·¾¶¡¹£¬µ÷ÓÃÊ±ÓÃÒıºÅ°ü×¡ÍêÕûÂ·¾¶£¨º¬¿Õ¸ñÒ²°²È«£©¡£
+REM   ×¢£º¶à¸ö°æ±¾Ä¿Â¼Ê±È¡µÚÒ»¸ö£¨×ÖÄ¸Ğò£©£¬ÈçĞèÖ¸¶¨ÇëÓÃ VIVADO_BAT£¨Öµ²»Òª¼ÓÒıºÅ£©¡£
+REM
+REM ¡¾ÎªÊ²Ã´µ÷ÓÃÒª¼Ó call¡¿
+REM   .bat Àï²»´ø call Ö±½Óµ÷ÓÃÁíÒ»¸ö .bat£¬¿ØÖÆÈ¨**²»»á·µ»Ø**£º×Ó½Å±¾ÀïµÄ
+REM   exit /b »áÖÕÖ¹ÕûÌõµ÷ÓÃÁ´£¬±¾½Å±¾ºóÃæµÄ if errorlevel ÅĞ¶ÏºÍ pause È«±»Ìø¹ı¡£
+REM   vivado.bat Ä©Î²ÕıÊÇ exit /b %errorlevel%£¨µÚ 50 ĞĞ£©£¬ËùÒÔ²»¼Ó call µÄÏÖÏóÊÇ£º
+REM   Vivado Õı³£ÅÜÍê -> ´°¿ÚË²¼äÏûÊ§ -> ¿´²»µ½"Íê³É"ºÍ´íÎóÌáÊ¾¡£
+REM   ¼Ó call ºó¿ØÖÆÈ¨·µ»Ø£¬±¨´íÊ±Ò²ÄÜÍ£ÔÚ pause ÉÏ¡£
+set VIVADO=
+if defined VIVADO_BAT if exist "%VIVADO_BAT%" set "VIVADO=%VIVADO_BAT%"
+
+if not defined VIVADO (
+    for %%N in (vivado.bat vivado) do (
+        if not defined VIVADO (
+            for /f "delims=" %%P in ('where %%N 2^>nul') do (
+                if not defined VIVADO set "VIVADO=%%P"
+            )
+        )
+    )
+)
+
+if not defined VIVADO (
+    for %%R in (
+        "C:\Xilinx\Vivado" "D:\Xilinx\Vivado" "C:\Program Files\Xilinx\Vivado"
+        "D:\Software\vivado\Vivado"
+    ) do (
+        if not defined VIVADO (
+            for /d %%V in ("%%~R\*") do (
+                if not defined VIVADO if exist "%%~V\bin\vivado.bat" set "VIVADO=%%~V\bin\vivado.bat"
+            )
+        )
+    )
+)
+
+if not defined VIVADO (
+    echo ERROR: ÕÒ²»µ½ vivado.bat£¬ÇëÈÎÑ¡Ò»ÖÖ·½Ê½½â¾ö£º
+    echo   1. °Ñ Vivado µÄ bin Ä¿Â¼¼ÓÈë PATH£¨ÊÇÄ¿Â¼£¬²»ÊÇ vivado.bat ÎÄ¼ş±¾Éí£©
+    echo   2. Éè»·¾³±äÁ¿£ºset VIVADO_BAT=D:\Software\vivado\Vivado\2019.1\bin\vivado.bat
+    echo   3. ±à¼­±¾½Å±¾£¬ÔÚ¶¨Î»¶Î°Ñ VIVADO Ö±½ÓĞ´³ÉÍêÕûÂ·¾¶
     pause
     exit /b 1
 )
+echo Ê¹ÓÃ Vivado: %VIVADO%
 
-REM æ—¥å¿—ç›®å½•å¿…é¡»å…ˆå»ºå¥½ï¼Œå¦åˆ™ -log ä¼šå› ç›®å½•ä¸å­˜åœ¨è€Œå¤±è´¥
+REM ÈÕÖ¾Ä¿Â¼±ØĞëÏÈ½¨ºÃ£¬·ñÔò -log »áÒòÄ¿Â¼²»´æÔÚ¶øÊ§°Ü
 if not exist "%ROOT%\out" mkdir "%ROOT%\out"
 
-echo ===== åˆ›å»º Vivado å·¥ç¨‹ =====
-"%VIVADO%" -mode batch -source "%SCRIPT_DIR%create_project.tcl" -log "%ROOT%\out\vivado_create.log" -journal "%ROOT%\out\vivado_create.jou"
+echo ===== ´´½¨ Vivado ¹¤³Ì =====
+call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%create_project.tcl" -log "%ROOT%\out\vivado_create.log" -journal "%ROOT%\out\vivado_create.jou"
 
 if errorlevel 1 (
     echo.
-    echo åˆ›å»ºå¤±è´¥ï¼Œè¯·çœ‹ out\vivado_create.log
+    echo ´´½¨Ê§°Ü£¬Çë¿´ out\vivado_create.log
     pause
     exit /b 1
 )
 
 echo.
-echo ===== å®Œæˆ =====
-echo   å·¥ç¨‹æ–‡ä»¶ï¼šcpu_single\cpu_single.xpr
-echo   ä¸‹ä¸€æ­¥ï¼šç”¨ Vivado GUI æ‰“å¼€å®ƒ
-echo     - çœ‹æ³¢å½¢ï¼šFlow Navigator -^> Simulation -^> Run Behavioral Simulation
-echo     - ç»¼åˆå®ç°ï¼šFlow Navigator -^> Synthesis / Implementation
+echo ===== Íê³É =====
+echo   ¹¤³ÌÎÄ¼ş£ºcpu_single\cpu_single.xpr
+echo   ÏÂÒ»²½£ºÓÃ Vivado GUI ´ò¿ªËü
+echo     - ¿´²¨ĞÎ£ºFlow Navigator -^> Simulation -^> Run Behavioral Simulation
+echo     - ×ÛºÏÊµÏÖ£ºFlow Navigator -^> Synthesis / Implementation
 pause

@@ -1,54 +1,97 @@
 @echo off
 REM ============================================================================
-REM build.bat â€”â€” ä¸€é”®æ„å»ºï¼ˆç»¼åˆ -> å®ç° -> æ¯”ç‰¹æµï¼‰ï¼ŒWindows ç”¨
+REM build.bat ¡ª¡ª Ò»¼ü¹¹½¨£¨×ÛºÏ -> ÊµÏÖ -> ±ÈÌØÁ÷£©£¬Windows ÓÃ
 REM ----------------------------------------------------------------------------
-REM ç”¨æ³•ï¼ˆåœ¨èµ„æºç®¡ç†å™¨é‡ŒåŒå‡»æœ¬æ–‡ä»¶ï¼Œæˆ–åœ¨ cmd ä¸­æ‰§è¡Œï¼‰ï¼š
-REM   scripts\build.bat            æ„å»º
-REM   scripts\build.bat program    æ„å»ºå¹¶çƒ§å½•åˆ°å¼€å‘æ¿
+REM ÓÃ·¨£¨ÔÚ×ÊÔ´¹ÜÀíÆ÷ÀïË«»÷±¾ÎÄ¼ş£¬»òÔÚ cmd ÖĞÖ´ĞĞ£©£º
+REM   scripts\build.bat            ¹¹½¨
+REM   scripts\build.bat program    ¹¹½¨²¢ÉÕÂ¼µ½¿ª·¢°å
 REM
-REM å‰ç½®ï¼šVivado å·²å®‰è£…ï¼Œä¸” vivado.bat åœ¨ PATH ä¸­ã€‚
-REM       è‹¥æ²¡åœ¨ PATHï¼ŒæŠŠä¸‹é¢ VIVADO æ”¹æˆå®é™…è·¯å¾„ï¼Œä¾‹å¦‚ï¼š
-REM       set VIVADO=C:\Xilinx\Vivado\2019.1\bin\vivado.bat
+REM Ç°ÖÃ£ºVivado ÒÑ°²×°¡£½Å±¾×Ô¶¯¶¨Î» vivado.bat£¬ÓÅÏÈ¼¶£º
+REM       VIVADO_BAT »·¾³±äÁ¿ > PATH > ³£¼û°²×°Î»ÖÃ£¨Ïê¼ûÏÂ·½¶¨Î»¶Î×¢ÊÍ£©¡£
 REM ============================================================================
 setlocal
 
 set SCRIPT_DIR=%~dp0
 set ROOT=%SCRIPT_DIR%..
-set VIVADO=vivado
 
-where %VIVADO% >nul 2>nul
-if errorlevel 1 (
-    echo ERROR: æ‰¾ä¸åˆ° vivadoï¼Œè¯·æŠŠ Vivado çš„ bin ç›®å½•åŠ å…¥ PATH
-    echo        æˆ–ç¼–è¾‘æœ¬è„šæœ¬ï¼ŒæŠŠ VIVADO è®¾ä¸ºå®Œæ•´è·¯å¾„
+REM ---- ¶¨Î» Vivado ----
+REM ¡¾ÎªÊ²Ã´²»ÄÜÖ»Ğ´ where vivado ÔÙµ÷ "%VIVADO%"¡¿
+REM   1) where Ö»°Ñ PATH ÌõÄ¿µ±¡¸Ä¿Â¼¡¹À´²éÕÒ¡£Èô PATH Àï¼ÓµÄÊÇ vivado.bat
+REM      ÎÄ¼ş±¾Éí¶ø²»ÊÇËüµÄ bin Ä¿Â¼£¬where ÕÒ²»µ½£¨PowerShell µÄ
+REM      Get-Command ·´¶øÄÜÕÒµ½£¬ÈİÒ×ÎóÅĞ³É»·¾³Ã»ÎÊÌâ£©¡£
+REM   2) vivado.bat ÄÚ²¿¿¿ %~dp0 ¶¨Î»×Ô¼ºµÄ setupEnv.bat£»ÓÃ¡¸´øÒıºÅµÄÂãÃû¡¹
+REM      µ÷ÓÃ£¨"%VIVADO%" ÇÒ VIVADO=vivado£©»áÈÃ×Ó½Å±¾µÄ %~dp0 ÍË»¯³Éµ±Ç°
+REM      ¹¤×÷Ä¿Â¼£¬vivado.bat ÓÚÊÇÈ¥ÕÒ <µ±Ç°Ä¿Â¼>\setupEnv.bat ¶øÆô¶¯Ê§°Ü¡£
+REM   ËùÒÔÕâÀïÍ³Ò»½âÎö³É¡¸ÍêÕûÂ·¾¶¡¹£¬µ÷ÓÃÊ±ÓÃÒıºÅ°ü×¡ÍêÕûÂ·¾¶£¨º¬¿Õ¸ñÒ²°²È«£©¡£
+REM   ×¢£º¶à¸ö°æ±¾Ä¿Â¼Ê±È¡µÚÒ»¸ö£¨×ÖÄ¸Ğò£©£¬ÈçĞèÖ¸¶¨ÇëÓÃ VIVADO_BAT£¨Öµ²»Òª¼ÓÒıºÅ£©¡£
+REM
+REM ¡¾ÎªÊ²Ã´µ÷ÓÃÒª¼Ó call¡¿
+REM   .bat Àï²»´ø call Ö±½Óµ÷ÓÃÁíÒ»¸ö .bat£¬¿ØÖÆÈ¨**²»»á·µ»Ø**£º×Ó½Å±¾ÀïµÄ
+REM   exit /b »áÖÕÖ¹ÕûÌõµ÷ÓÃÁ´£¬±¾½Å±¾ºóÃæµÄ if errorlevel ÅĞ¶ÏºÍ pause È«±»Ìø¹ı¡£
+REM   vivado.bat Ä©Î²ÕıÊÇ exit /b %errorlevel%£¨µÚ 50 ĞĞ£©£¬ËùÒÔ²»¼Ó call µÄÏÖÏóÊÇ£º
+REM   Vivado Õı³£ÅÜÍê -> ´°¿ÚË²¼äÏûÊ§ -> ¿´²»µ½"Íê³É"ºÍ´íÎóÌáÊ¾¡£
+REM   ¼Ó call ºó¿ØÖÆÈ¨·µ»Ø£¬±¨´íÊ±Ò²ÄÜÍ£ÔÚ pause ÉÏ¡£
+set VIVADO=
+if defined VIVADO_BAT if exist "%VIVADO_BAT%" set "VIVADO=%VIVADO_BAT%"
+
+if not defined VIVADO (
+    for %%N in (vivado.bat vivado) do (
+        if not defined VIVADO (
+            for /f "delims=" %%P in ('where %%N 2^>nul') do (
+                if not defined VIVADO set "VIVADO=%%P"
+            )
+        )
+    )
+)
+
+if not defined VIVADO (
+    for %%R in (
+        "C:\Xilinx\Vivado" "D:\Xilinx\Vivado" "C:\Program Files\Xilinx\Vivado"
+        "D:\Software\vivado\Vivado"
+    ) do (
+        if not defined VIVADO (
+            for /d %%V in ("%%~R\*") do (
+                if not defined VIVADO if exist "%%~V\bin\vivado.bat" set "VIVADO=%%~V\bin\vivado.bat"
+            )
+        )
+    )
+)
+
+if not defined VIVADO (
+    echo ERROR: ÕÒ²»µ½ vivado.bat£¬ÇëÈÎÑ¡Ò»ÖÖ·½Ê½½â¾ö£º
+    echo   1. °Ñ Vivado µÄ bin Ä¿Â¼¼ÓÈë PATH£¨ÊÇÄ¿Â¼£¬²»ÊÇ vivado.bat ÎÄ¼ş±¾Éí£©
+    echo   2. Éè»·¾³±äÁ¿£ºset VIVADO_BAT=D:\Software\vivado\Vivado\2019.1\bin\vivado.bat
+    echo   3. ±à¼­±¾½Å±¾£¬ÔÚ¶¨Î»¶Î°Ñ VIVADO Ö±½ÓĞ´³ÉÍêÕûÂ·¾¶
     pause
     exit /b 1
 )
+echo Ê¹ÓÃ Vivado: %VIVADO%
 
-REM æ—¥å¿—ç›®å½•å¿…é¡»å…ˆå»ºå¥½ï¼Œå¦åˆ™ -log ä¼šå› ç›®å½•ä¸å­˜åœ¨è€Œå¤±è´¥
+REM ÈÕÖ¾Ä¿Â¼±ØĞëÏÈ½¨ºÃ£¬·ñÔò -log »áÒòÄ¿Â¼²»´æÔÚ¶øÊ§°Ü
 if not exist "%ROOT%\out" mkdir "%ROOT%\out"
 
-echo ===== æ„å»ºå•å‘¨æœŸ CPU =====
-"%VIVADO%" -mode batch -source "%SCRIPT_DIR%build.tcl" -log "%ROOT%\out\vivado_build.log" -journal "%ROOT%\out\vivado_build.jou"
+echo ===== ¹¹½¨µ¥ÖÜÆÚ CPU =====
+call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%build.tcl" -log "%ROOT%\out\vivado_build.log" -journal "%ROOT%\out\vivado_build.jou"
 if errorlevel 1 (
     echo.
-    echo æ„å»ºå¤±è´¥ï¼Œè¯·çœ‹ out\vivado_build.log
+    echo ¹¹½¨Ê§°Ü£¬Çë¿´ out\vivado_build.log
     pause
     exit /b 1
 )
 
 if /i "%1"=="program" (
     echo.
-    echo ===== çƒ§å½•åˆ°å¼€å‘æ¿ =====
-    "%VIVADO%" -mode batch -source "%SCRIPT_DIR%program.tcl" -log "%ROOT%\out\vivado_program.log" -journal "%ROOT%\out\vivado_program.jou"
+    echo ===== ÉÕÂ¼µ½¿ª·¢°å =====
+    call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%program.tcl" -log "%ROOT%\out\vivado_program.log" -journal "%ROOT%\out\vivado_program.jou"
     if errorlevel 1 (
         echo.
-        echo çƒ§å½•å¤±è´¥ï¼Œè¯·çœ‹ out\vivado_program.log
+        echo ÉÕÂ¼Ê§°Ü£¬Çë¿´ out\vivado_program.log
         pause
         exit /b 1
     )
 )
 
 echo.
-echo ===== å®Œæˆ =====
-echo   æ¯”ç‰¹æµï¼šout\cpu_board.bit
+echo ===== Íê³É =====
+echo   ±ÈÌØÁ÷£ºout\cpu_board.bit
 pause

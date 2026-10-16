@@ -20,13 +20,45 @@ if {![file exists $bit]} {
     exit 1
 }
 
-open_hw_manager
+# ---- 打开硬件管理器（跨 2019.1 / 2020.1+ 兼容）----
+# 【为什么不能直接写 open_hw_manager】
+#   open_hw_manager / close_hw_manager 是 2020.1 才引入的新入口；在 2019.1 里
+#   这两个命令不存在，直接调用会报 invalid command name 而中止烧录。
+#   2019.1 的入口是老命令 open_hw / close_hw。
+# 【为什么 2019.1 还要先 load_features】
+#   2019.1 批处理模式下硬件功能（labtools）默认不加载，未加载时连 open_hw
+#   都不存在（[info commands open_hw] 为空）。2020.1+ 已内置该功能。
+#   用 catch 包住：新版没有 labtools 这个 feature 名，报错可忽略。
+if {[llength [info commands open_hw_manager]] == 0 && [llength [info commands open_hw]] == 0} {
+    catch {load_features labtools}
+}
+
+# 探测用哪套命令，新旧各取其一（2019.1 走 else 分支）
+if {[llength [info commands open_hw_manager]] > 0} {
+    set hw_open  open_hw_manager
+    set hw_close close_hw_manager
+} elseif {[llength [info commands open_hw]] > 0} {
+    set hw_open  open_hw
+    set hw_close close_hw
+} else {
+    puts "ERROR: 本版本 Vivado 既无 open_hw_manager 也无 open_hw，无法访问硬件"
+    exit 1
+}
+puts "硬件管理器入口：$hw_open"
+$hw_open
 
 # 若本机没有 hw_server 在跑，Vivado 会自动拉起一个
+# 【-allow_non_jtag 的版本差异】
+#   2020.1+ 支持 -allow_non_jtag（允许连接非 JTAG 目标）；
+#   2019.1 的 connect_hw_server 只接受 [-url] [-quiet] [-verbose]，
+#   传该选项会报 Common 17-170 Unknown option 而中止。
+#   这里先试带选项的写法，失败再退回到不带选项，两边都能用。
 if {[catch {connect_hw_server -allow_non_jtag} err]} {
-    puts "ERROR: 无法连接 hw_server：$err"
-    puts "       检查板子是否插好、USB 是否被占用：lsusb | grep 0403:6010"
-    exit 1
+    if {[catch {connect_hw_server} err2]} {
+        puts "ERROR: 无法连接 hw_server：$err2"
+        puts "       检查板子是否插好、USB 是否被占用：lsusb | grep 0403:6010"
+        exit 1
+    }
 }
 
 set targets [get_hw_targets]
@@ -53,4 +85,4 @@ puts "  比特流：$bit"
 puts "  器件  ：$dev"
 puts "=============================="
 
-close_hw_manager
+$hw_close
