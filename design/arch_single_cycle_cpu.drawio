@@ -1,0 +1,462 @@
+<mxfile host="Electron" agent="ClaudeCode" pages="3">
+  <diagram id="datapath" name="1-CPU数据通路">
+    <mxGraphModel dx="1263" dy="873" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1680" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=24;fontStyle=1;align=left;" value="LA32R 单周期 CPU 数据通路（cpu_top.v）" vertex="1">
+          <mxGeometry height="40" width="900" x="80" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="m_ctrl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="主控制器 control.v&#xa;6 种编码格式译码&#xa;3R · 2RI5 · 2RI12&#xa;2RI20 · 2RI16 · I26" vertex="1">
+          <mxGeometry height="200" width="420" x="700" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="m_pc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" value="PC 寄存器&#xa;pc.v&#xa;复位 0x1C000000" vertex="1">
+          <mxGeometry height="110" width="150" x="80" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="m_imem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="IMEM 4KB&#xa;imem.v&#xa;异步读&#xa;$readmemh(IMEM_FILE)" vertex="1">
+          <mxGeometry height="150" width="200" x="330" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="m_rf" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="寄存器堆 regfile.v&#xa;32×32 · 双读一写&#xa;r0 恒 0 · 异步读" vertex="1">
+          <mxGeometry height="180" width="210" x="640" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="m_bmux" parent="1" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;direction=east;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="B 源&#xa;MUX" vertex="1">
+          <mxGeometry height="160" width="70" x="980" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="m_alu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="ALU alu.v&#xa;13 种操作&#xa;算术 / 逻辑 / 移位 / 比较&#xa;LU12I · PCADD" vertex="1">
+          <mxGeometry height="170" width="210" x="1150" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="m_dmem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="DMEM 8KB dmem.v&#xa;异步读 · 同步写&#xa;字节 / 半字掩码（小端）&#xa;addr[31:28]=0xD → MMIO" vertex="1">
+          <mxGeometry height="180" width="210" x="1510" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="m_wbmux" parent="1" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;direction=east;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;horizontal=0;" value="写回&#xa;MUX" vertex="1">
+          <mxGeometry height="300" width="70" x="1840" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="wb_map" parent="1" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;fontColor=#666666;" value="wb_sel&#xa;0 = ALU&#xa;1 = Mem&#xa;2 = MUL&#xa;3 = DIV&#xa;4 = PC+4" vertex="1">
+          <mxGeometry height="140" width="160" x="1970" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="m_imm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="立即数扩展&#xa;imm_ext.v&#xa;si12 / ui12 / si20" vertex="1">
+          <mxGeometry height="130" width="210" x="910" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="m_mdu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="MDU mdu.v&#xa;组合乘除&#xa;MUL / DIV / MOD" vertex="1">
+          <mxGeometry height="130" width="210" x="1150" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="m_branch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="分支比较器&#xa;BEQ / BNE / BLT&#xa;BGE / BLTU / BGEU" vertex="1">
+          <mxGeometry height="120" width="210" x="620" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="m_nextpc" parent="1" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;direction=west;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;horizontal=0;" value="next_pc MUX" vertex="1">
+          <mxGeometry height="360" width="70" x="60" y="1105" as="geometry" />
+        </mxCell>
+        <mxCell id="nextpc_note" parent="1" style="text;html=1;fontSize=12;align=left;fontColor=#666666;" value="优先级：jump ＞ branch ＞ pc+4" vertex="1">
+          <mxGeometry height="25" width="320" x="80" y="1615" as="geometry" />
+        </mxCell>
+        <mxCell id="m_add4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" value="PC+4" vertex="1">
+          <mxGeometry height="50" width="140" x="220" y="990" as="geometry" />
+        </mxCell>
+        <mxCell id="m_bt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="分支目标&#xa;pc + sext(offs16)&lt;&lt;2&#xa;（基准 = 本条 PC）" vertex="1">
+          <mxGeometry height="90" width="330" x="390" y="1432.5" as="geometry" />
+        </mxCell>
+        <mxCell id="m_jt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="跳转目标&#xa;I26：pc + sext(offs26)&lt;&lt;2&#xa;JIRL：rd1 + sext(offs16)&lt;&lt;2" vertex="1">
+          <mxGeometry height="120" width="330" x="440" y="1280" as="geometry" />
+        </mxCell>
+        <mxCell id="obs_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=12;dashed=1;" value="观测端口（仿真 / 调试用）&#xa;pc_out · reg_we · reg_wa · reg_wd&#xa;上板顶层悬空不接" vertex="1">
+          <mxGeometry height="140" width="400" x="1950" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="mmio_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=12;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=12;" value="MMIO 接口 → cpu_board（图 2）&#xa;出：mmio_wr / addr / wdata / sel&#xa;入：mmio_rdata ← 外设寄存器&#xa;检测：addr[31:28] == 0xD" vertex="1">
+          <mxGeometry height="160" width="400" x="1950" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=12;" value="" vertex="1">
+          <mxGeometry height="230" width="400" x="1950" y="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_title" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=left;" value="图例" vertex="1">
+          <mxGeometry height="25" width="200" x="1965" y="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#1A1A1A;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1965" y="1205" as="sourcePoint" />
+            <mxPoint x="2045" y="1205" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lg2" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#0057B8;strokeWidth=2;dashed=1;dashPattern=8 4;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1965" y="1245" as="sourcePoint" />
+            <mxPoint x="2045" y="1245" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lg3" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#1B6B3A;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1965" y="1285" as="sourcePoint" />
+            <mxPoint x="2045" y="1285" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lg4" edge="1" parent="1" style="endArrow=none;html=1;strokeColor=#7B2D8E;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1965" y="1325" as="sourcePoint" />
+            <mxPoint x="2045" y="1325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lg1_t" parent="1" style="text;html=1;fontSize=12;align=left;" value="数据通路" vertex="1">
+          <mxGeometry height="24" width="160" x="2060" y="1193" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2_t" parent="1" style="text;html=1;fontSize=12;align=left;" value="控制信号" vertex="1">
+          <mxGeometry height="24" width="160" x="2060" y="1233" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3_t" parent="1" style="text;html=1;fontSize=12;align=left;" value="分支 / 下一 PC" vertex="1">
+          <mxGeometry height="24" width="180" x="2060" y="1273" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4_t" parent="1" style="text;html=1;fontSize=12;align=left;" value="写回" vertex="1">
+          <mxGeometry height="24" width="160" x="2060" y="1313" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pc_imem" edge="1" parent="1" source="m_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="m_imem" value="pc[11:2]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_imem_ctrl" edge="1" parent="1" source="m_imem" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=0;entryX=0.138;entryY=1.02;entryDx=0;entryDy=0;entryPerimeter=0;" target="m_ctrl" value="instr[31:0]">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="330" />
+              <mxPoint x="758" y="330" />
+            </Array>
+            <mxPoint x="700" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rf_alu" edge="1" parent="1" source="m_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.33;entryX=0;entryY=0.5;" target="m_alu" value="rd1 → A">
+          <mxGeometry relative="1" x="0.55" y="-16" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="520" />
+              <mxPoint x="880" y="430" />
+              <mxPoint x="1080" y="430" />
+              <mxPoint x="1080" y="545" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rf_bmux" edge="1" parent="1" source="m_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.67;entryX=0;entryY=0.5;" target="m_bmux" value="rd2 [0]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_imm_bmux" edge="1" parent="1" source="m_imm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="m_bmux" value="imm_out [1]">
+          <mxGeometry relative="1" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="e_bmux_alu" edge="1" parent="1" source="m_bmux" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.625;entryX=0;entryY=0.82;" target="m_alu" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100.05" y="595.43" />
+              <mxPoint x="1100.05" y="599.43" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_alu_dmem" edge="1" parent="1" source="m_alu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.35;entryX=0;entryY=0.33;" target="m_dmem" value="addr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rf_mdu" edge="1" parent="1" source="m_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;jumpStyle=arc;jumpSize=8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" target="m_mdu" value="rd1 / rd2">
+          <mxGeometry relative="1" x="0.4" y="-12" as="geometry">
+            <Array as="points">
+              <mxPoint x="745" y="980" />
+              <mxPoint x="1255" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rf_branch" edge="1" parent="1" source="m_rf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.9;entryX=1;entryY=0.42;" target="m_branch" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="1050" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_alu_wb" edge="1" parent="1" source="m_alu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0;entryY=0.73;" target="m_wbmux" value="alu_res [0]">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1255" y="720" />
+              <mxPoint x="1846.24" y="720" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_dmem_wb" edge="1" parent="1" source="m_dmem" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.992;exitY=0.452;entryX=0;entryY=0.23;exitDx=0;exitDy=0;exitPerimeter=0;" target="m_wbmux" value="mem_rdata [1]">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1720" y="541.36" />
+              <mxPoint x="1720" y="540" />
+              <mxPoint x="1780" y="540" />
+              <mxPoint x="1780" y="579.91" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_mdu_wb" edge="1" parent="1" source="m_mdu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1A1A1A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.5;entryX=0;entryY=0.93;" target="m_wbmux" value="mul [2] / div [3]">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1750.05" y="885.05" />
+              <mxPoint x="1750.05" y="780" />
+              <mxPoint x="1841.86" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_wb_rf" edge="1" parent="1" source="m_wbmux" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#7B2D8E;strokeWidth=2;jumpStyle=arc;jumpSize=8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" target="m_rf" value="wd（= reg_wd）">
+          <mxGeometry relative="1" x="0.15" as="geometry">
+            <Array as="points">
+              <mxPoint x="1875" y="1220" />
+              <mxPoint x="520.05" y="1220" />
+              <mxPoint x="520.05" y="690" />
+              <mxPoint x="745" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_pc_add4" edge="1" parent="1" source="m_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="m_add4" value="pc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="930" />
+              <mxPoint x="325" y="930" />
+            </Array>
+            <mxPoint x="300.05" y="1000" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_pc_bt" edge="1" parent="1" source="m_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;jumpStyle=arc;jumpSize=8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=1;entryX=0.5;entryY=1;" target="m_bt" value="pc">
+          <mxGeometry relative="1" x="0.55" y="10" as="geometry">
+            <Array as="points">
+              <mxPoint x="20" y="610" />
+              <mxPoint x="20" y="1560" />
+              <mxPoint x="555" y="1560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_pc_jt" edge="1" parent="1" source="m_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;jumpStyle=arc;jumpSize=8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=1;entryX=0.909;entryY=1;" target="m_jt" value="pc">
+          <mxGeometry relative="1" x="0.8" y="-14" as="geometry">
+            <Array as="points">
+              <mxPoint x="20" y="610" />
+              <mxPoint x="20" y="1560" />
+              <mxPoint x="740" y="1560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_add4_mux" edge="1" parent="1" source="m_add4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=0.5;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="m_nextpc" value="[0]">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="1015.04" />
+              <mxPoint x="170" y="1448.64" />
+            </Array>
+            <mxPoint x="94.65" y="1343.72" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_bt_mux" edge="1" parent="1" source="m_bt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=0.5;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" target="m_nextpc" value="[2]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_jt_mux" edge="1" parent="1" source="m_jt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=0.5;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="m_nextpc" value="[3]">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mux_pc" edge="1" parent="1" source="m_nextpc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=1;entryX=0;entryY=0.5;exitDx=0;exitDy=0;" target="m_pc" value="next_pc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="60.05" y="555.05" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_branch_mux" edge="1" parent="1" source="m_branch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1B6B3A;strokeWidth=2;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0;entryY=1;entryDx=0;entryDy=0;" target="m_nextpc" value="branch_taken">
+          <mxGeometry relative="1" x="-0.0831" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="725" y="1140" />
+              <mxPoint x="200.05" y="1140" />
+              <mxPoint x="200.05" y="1105.05" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_rf" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.24;exitY=1;entryX=0.76;entryY=0;" target="m_rf" value="reg_we / ra1 / ra2 / wa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ctrl_imm" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=0.55;entryX=0;entryY=0.5;" target="m_imm" value="imm_sel">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590.05" y="210" />
+              <mxPoint x="590.05" y="825.05" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_bmux" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.75;exitY=1;entryX=0.5;entryY=0;exitDx=0;exitDy=0;" target="m_bmux" value="alu_src">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_alu" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0.83;exitY=1;entryX=0.5;entryY=0;" target="m_alu" value="alu_op / shift_imm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1048.62" y="340" />
+              <mxPoint x="1250.05" y="340" />
+              <mxPoint x="1250.05" y="460" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_mdu" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.9;entryX=1;entryY=0.23;" target="m_mdu" value="mul / div valid &amp; op">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1410.05" y="280" />
+              <mxPoint x="1410.05" y="849.9" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_dmem" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.7;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="m_dmem" value="mem_wen / mem_sel">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1615" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_wb" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.6;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="m_wbmux" value="wb_sel">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1820.05" y="220" />
+              <mxPoint x="1820.05" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ctrl_branch" edge="1" parent="1" source="m_ctrl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#0057B8;dashed=1;dashPattern=8 4;strokeWidth=2;fontColor=#0057B8;fontSize=12;labelBackgroundColor=#ffffff;exitX=0;exitY=0.85;entryX=0.5;entryY=0;" target="m_branch" value="branch_op">
+          <mxGeometry relative="1" x="0.5" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="270" />
+              <mxPoint x="560" y="1000" />
+              <mxPoint x="725" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="cpu_board" name="2-板级顶层cpu_board">
+    <mxGraphModel dx="1543" dy="1067" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=left;" value="板级顶层 cpu_board.v（EGO1 · xc7a35tcsg324-1）" vertex="1">
+          <mxGeometry height="30" width="700" x="40" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="p_clk" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="sys_clk_in&#xa;P17 · 100 MHz 晶振" vertex="1">
+          <mxGeometry height="60" width="140" x="40" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="p_rst" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="sys_rst_n&#xa;P15 · 复位按键（低有效）" vertex="1">
+          <mxGeometry height="60" width="140" x="40" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p_out" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="输出引脚&#xa;led_pin[15:0]&#xa;seg_cs_pin[7:0]&#xa;seg_data_0_pin[7:0]&#xa;seg_data_1_pin[7:0]" vertex="1">
+          <mxGeometry height="110" width="160" x="1370" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="p_in" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="输入引脚&#xa;sw_pin[7:0]&#xa;dip_pin[7:0]&#xa;btn_pin[4:0]" vertex="1">
+          <mxGeometry height="90" width="160" x="1370" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="m_div" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" value="时钟分频器&#xa;parameter CLK_DIV = 100&#xa;100/100 → 1 MHz（默认）&#xa;CLK_DIV=1 → 100 MHz 直连&#xa;原因：组合除法路径 ~570 ns&#xa;无法在 100 MHz 收敛" vertex="1">
+          <mxGeometry height="120" width="200" x="260" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="m_rst" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" value="复位同步&#xa;两级同步器&#xa;sys_rst_n → rst_n_s1 → rst_n_s2&#xa;内部统一同步低有效 rst_n" vertex="1">
+          <mxGeometry height="100" width="200" x="260" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="m_cpu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" value="cpu_top&#xa;u_cpu（图 1 数据通路）&#xa;&#xa;观测端口悬空：&#xa;pc_out / reg_we /&#xa;reg_wa / reg_wd" vertex="1">
+          <mxGeometry height="160" width="220" x="580" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="m_pwrite" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="外设寄存器（同步写）&#xa;case (mmio_addr[4:2])&#xa;0 → led_r[15:0]&#xa;1 → seg0_r[7:0]&#xa;2 → seg1_r[7:0]&#xa;3 → segcs_r[7:0]" vertex="1">
+          <mxGeometry height="130" width="220" x="990" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="m_pread" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="MMIO 读译码（组合）&#xa;4 → {dip_pin, sw_pin}&#xa;5 → {27&#39;d0, btn_pin}&#xa;其他 → 32&#39;d0" vertex="1">
+          <mxGeometry height="100" width="220" x="1040" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="mmio_map" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=11;" value="MMIO 地址映射（DESIGN.md §4.2）&#xa;0xD0000000 W led[15:0]&#xa;0xD0000004 W seg_data0[7:0]&#xa;0xD0000008 W seg_data1[7:0]&#xa;0xD000000C W seg_cs[7:0]&#xa;0xD0000010 R {dip, sw}&#xa;0xD0000014 R btn[4:0]" vertex="1">
+          <mxGeometry height="150" width="220" x="900" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e_clk_div" edge="1" parent="1" source="p_clk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;fontSize=11;" target="m_div" value="100 MHz">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_div_cpu" edge="1" parent="1" source="m_div" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.2;" target="m_cpu" value="cpu_clk_out（分频后时钟）">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rst_cpu" edge="1" parent="1" source="m_rst" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.8;" target="m_cpu" value="rst_n（同步后）">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cpu_pwrite" edge="1" parent="1" source="m_cpu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" target="m_pwrite" value="mmio_wr / mmio_addr / mmio_wdata / mmio_sel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cpu_pread" edge="1" parent="1" source="m_cpu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" target="m_pread" value="mmio_addr">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="350" />
+              <mxPoint x="1020" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_pread_cpu" edge="1" parent="1" source="m_pread" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=0;exitY=0.25;entryX=1;entryY=0.55;" target="m_cpu" value="mmio_rdata">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="285" />
+              <mxPoint x="850" y="248" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_pwrite_led" edge="1" parent="1" source="m_pwrite" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=1;exitY=0.2;entryX=0;entryY=0.2;" target="p_out" value="led_r">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pwrite_seg" edge="1" parent="1" source="m_pwrite" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=1;exitY=0.7;entryX=0;entryY=0.7;" target="p_out" value="seg0_r / seg1_r / segcs_r">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pin_pread" edge="1" parent="1" source="p_in" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=0;exitY=0.7;entryX=1;entryY=0.5;" target="m_pread" value="{dip, sw} / btn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rst_div" edge="1" parent="1" source="p_rst" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;dashed=1;fontSize=10;exitX=0.5;exitY=1;entryX=0.25;entryY=1;" target="m_rst" value="sys_rst_n">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note_div" parent="1" style="text;html=1;fontSize=10;fontColor=#666666;" value="注意：分频器自由运行，复位只作用于 CPU 与外设寄存器；复位同步器使用 cpu_clk_out 采样" vertex="1">
+          <mxGeometry height="20" width="300" x="260" y="360" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="tb_all" name="3-Testbench仿真结构">
+    <mxGraphModel dx="1389" dy="960" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=left;" value="tb_all.v —— 全指令自检仿真平台（sim/tb_all.v，配合 tests/asm/test_all.hex）" vertex="1">
+          <mxGeometry height="30" width="800" x="40" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="tb" parent="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacing=8;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" value="tb_all（testbench 顶层）&#xa;&#xa;时钟：always #5 clk = ~clk（100 MHz）&#xa;复位：rst_n=0 上电，#20 ns 拉高&#xa;周期预算：120 万拍（测试程序含 8 段 125ms&#xa;软件延迟共约 50 万拍 + 一倍余量；xsim 约 1 分钟）" vertex="1">
+          <mxGeometry height="700" width="1220" x="30" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="m_cpu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" value="cpu_top&#xa;u_cpu（图 1 数据通路）&#xa;&#xa;程序：$readmemh 装载&#xa;tests/hex/test_all.hex&#xa;（IMEM_FILE 宏）" vertex="1">
+          <mxGeometry height="140" width="240" x="80" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="m_mon" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" value="MMIO 写监视器&#xa;always @(posedge clk)&#xa;捕获 mmio_wr 的每笔写：&#xa;w_addr / w_data 存入环形缓冲&#xa;容量 64 笔（最坏情况取值）&#xa;同时 $display 每笔写" vertex="1">
+          <mxGeometry height="140" width="260" x="550" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="m_judge" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" value="结果判定（周期预算耗尽后）&#xa;按环形缓冲末几笔匹配写序列" vertex="1">
+          <mxGeometry height="80" width="260" x="440" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="r_pass" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" value="PASS：末 4 笔 =&#xa;LED=0xFFFFFFFF → segcs=0xFFFFFFFF&#xa;→ seg0=0x7F → seg1=0x7F&#xa;现象：LED 全亮 + 数码管 88888888" vertex="1">
+          <mxGeometry height="90" width="280" x="840" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="r_fail" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" value="FAIL：末笔 = seg_cs=0x11&#xa;倒数第 5 笔 = LED 错误码&#xa;低 16 位 = 组号*256 + 项号&#xa;（LED 错误码 → seg0=组号 →&#xa;seg_cs=0x01 → seg1=项号 → seg_cs=0x11）" vertex="1">
+          <mxGeometry height="110" width="280" x="840" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="r_unk" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="UNKNOWN：写序列异常&#xa;（不匹配以上两种模式，nw 计数打印）" vertex="1">
+          <mxGeometry height="70" width="280" x="800" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="note_dev0" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=11;" value="注意：tb 中 mmio_rdata 接 32&#39;d0（不接外设寄存器），&#xa;测试程序若读 MMIO 输入寄存器读到 0" vertex="1">
+          <mxGeometry height="90" width="280" x="70" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="note_hex" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#f5f5f5;strokeColor=#999999;align=left;verticalAlign=top;fontSize=11;" value="运行方式：&#xa;· Vivado GUI 行为仿真（cpu_single 工程）&#xa;· 或批处理仿真脚本&#xa;· 综合与仿真共用同一 IMEM_FILE 宏装载 hex" vertex="1">
+          <mxGeometry height="120" width="280" x="70" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="e_clk" edge="1" parent="1" source="tb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9673A6;fontSize=11;exitX=0.5;exitY=0;entryX=0.5;entryY=0;" target="m_cpu" value="clk / rst_n">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cpu_mon" edge="1" parent="1" source="m_cpu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="m_mon" value="mmio_wr / mmio_addr / mmio_wdata">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_mon_judge" edge="1" parent="1" source="m_mon" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;fontSize=11;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="m_judge" value="w_addr[] / w_data[] / nw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_judge_pass" edge="1" parent="1" source="m_judge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;fontSize=11;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" target="r_pass">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_judge_fail" edge="1" parent="1" source="m_judge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#b85450;fontSize=11;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="r_fail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_judge_unk" edge="1" parent="1" source="m_judge" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#d6b656;fontSize=11;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" target="r_unk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cpu_ret" edge="1" parent="1" source="note_dev0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;dashed=1;fontSize=11;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="m_cpu" value="mmio_rdata = 32&#39;d0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
