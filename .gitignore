@@ -10,6 +10,7 @@
 *.wpc
 *.str
 archive_project_summary.txt
+cpu_single/
 
 # ---- Vivado 生成目录：两种命名形态都覆盖 ----
 # 形态 A「目录即工程」：cpu_single.cache/ cpu_single.runs/ ...
