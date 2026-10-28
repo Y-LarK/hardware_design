@@ -207,7 +207,7 @@ DELAY3:
     bne       $s5, $zero, DELAY3
 
 /* ===========================================================================
- * 组 4：移位 sll.w / srl.w / sra.w / slli.w / srai.w / rcri.w
+ * 组 4：移位 sll.w / srl.w / sra.w / slli.w / srli.w / srai.w
  * =========================================================================*/
     li.w      $s3, 4
     sll.w     $sp, $ra, $tp         /* 10 << 3 = 80 */
@@ -233,17 +233,19 @@ DELAY3:
     li.w      $s2, 40
     bne       $s2, $sp, FAIL
 
-    srai.w    $sp, $ra, 1           /* 10 >> 1 = 5 */
+    li.w      $a0, -1               /* $a0 = -16（0xFFFFFFF0） */
+    addi.w    $a0, $a0, -15
+    srai.w    $sp, $a0, 2           /* 算术右移 2：-16 >> 2 = -4 */
     li.w      $s4, 4
-    li.w      $s2, 5
+    li.w      $s2, -1
+    addi.w    $s2, $s2, -3          /* $s2 = -4 */
     bne       $s2, $sp, FAIL
 
-    li.w      $a0, -1               /* $a0 = -10（0xFFFFFFF6） */
-    addi.w    $a0, $a0, -9
-    rcri.w    $sp, $a0, 2           /* 循环右移 2：0xFFFFFFF6 -> 0xBFFFFFFD */
+    li.w      $a0, -1               /* $a0 = -16（0xFFFFFFF0） */
+    addi.w    $a0, $a0, -15
+    srli.w    $sp, $a0, 28          /* 逻辑右移 28：0xFFFFFFF0 -> 0xF（算术右移会得 -1） */
     li.w      $s4, 5
-    li.w      $s2, -1
-    addi.w    $s2, $s2, -2          /* $s2 = -3（0xFFFFFFFD） */
+    li.w      $s2, 15
     bne       $s2, $sp, FAIL
 
     /* 进度灯：组 4 通过，LED = 0x001F，随后延迟 125ms 让流水可见 */

@@ -9,7 +9,7 @@
 //   - 分支比较 rj vs rd（2RI16 汇编格式：BEQ rj, rd, offs16）
 //   - JIRL 目标 = GR[rj] + sext(offs16)<<2，PC+4 写 rd
 //   - BL 把 PC+4 写 r1
-//   - 寄存器堆 2 读 1 写 + 同拍旁路（模块内）
+//   - 寄存器堆 2 读 1 写，无写穿透（写回在时钟沿完成，本拍读到旧值）
 //   - IMEM/DMEM 用分布式 RAM（异步读，单周期时序要求）
 //   - 访存地址高 4 位 == 0xD 时路由 MMIO（外设）
 // ============================================================================
@@ -72,7 +72,7 @@ module cpu_top (
         .jump_op(jump_op), .shift_imm(shift_imm)
     );
 
-    // 寄存器堆（2 读 1 写 + 同拍旁路）
+    // 寄存器堆（2 读 1 写；单周期无需旁路，见 regfile.v）
     regfile u_regfile (.clk(clk), .we(reg_we), .ra1(ra1), .ra2(ra2),
                        .wa(wa), .wd(reg_wd), .rd1(rd1), .rd2(rd2));
 

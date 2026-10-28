@@ -102,12 +102,14 @@ module control (
         endcase
 
         // ---------- 2RI5：移位立即数（ui5 在 instr[14:10]，移位量直接取字段） ----------
+        // 编码已用 binutils 实测核对：SLLI.W=0x81、SRLI.W=0x89、SRAI.W=0x91。
+        // 0xA1 是 RCRI.W，不在本设计 46 条指令清单内，故不译码。
         case (instr[31:15])
             17'h00081: begin // SLLI.W rd,rj,ui5
                 reg_we=1'b1; alu_op=6'd8;  shift_imm=1'b1; wb_sel=3'd0; end
-            17'h00091: begin // SRLI.W
+            17'h00089: begin // SRLI.W
                 reg_we=1'b1; alu_op=6'd9;  shift_imm=1'b1; wb_sel=3'd0; end
-            17'h000A1: begin // SRAI.W
+            17'h00091: begin // SRAI.W
                 reg_we=1'b1; alu_op=6'd10; shift_imm=1'b1; wb_sel=3'd0; end
             default: ;
         endcase

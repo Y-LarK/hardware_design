@@ -28,7 +28,7 @@ module cpu_board (
     // 单周期 CPU 的组合除法器路径延迟约 570 ns（综合时序实测），无法在 100 MHz
     // 下收敛。因此上板时钟可配置：
     //   CLK_DIV = 1   -> 100 MHz 直连（跑不含除法的演示程序）
-    //   CLK_DIV = N   -> 100/N MHz（跑含 MUL/DIV 的全指令自检程序，如 N=100 -> 1 MHz）
+    //   CLK_DIV = N   -> 100/(2N) MHz（跑含 MUL/DIV 的全指令自检程序，如 N=100 -> 0.5 MHz）
     parameter CLK_DIV = 100;
 
     reg [15:0] clk_cnt;
