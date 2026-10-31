@@ -562,7 +562,7 @@ hardware_design/
 │   └── run_sim.sh             # iverilog 快速仿真脚本
 ├── tests/
 │   ├── asm/                   # 汇编测试源（GNU as 语法）
-│   │   ├── test_all.s         # ✅ 综合自检（上板用，313 条指令，8 个测试组）
+│   │   ├── test_all.s         # ✅ 综合自检（上板用，417 条指令，10 个测试组）
 │   │   ├── Makefile           # ✅ as -> objcopy -> od 一键生成 hex
 │   │   ├── test_arith.s       # 规划：算术逻辑分组
 │   │   ├── test_shift.s       # 规划：移位
@@ -726,9 +726,9 @@ test_all.s ──> as -o test_all.elf                    # 直接汇编，不加
 
 ### 8.4 上板自检程序
 
-`test_all.s` 的设计（源码在 `tests/asm/test_all.s`，313 条指令）：
+`test_all.s` 的设计（源码在 `tests/asm/test_all.s`，417 条指令）：
 
-1. 按 **8 个测试组**顺序执行，每组含若干测试项，每项用一组有代表性的操作数算一遍
+1. 按 **10 个测试组**顺序执行，每组含若干测试项，每项用一组有代表性的操作数算一遍
 2. 结果与**硬编码的期望值**比较（`bne 期望, 实际, FAIL`）
 3. **进度流水灯**：每通过一组重写一次 LED（`0x01→0x03→0x07→…→0x00FF`），
    运行中 LED 亮的个数 = 已通过组数；失败时 LED 定格在「已通过组数」，
@@ -752,6 +752,8 @@ test_all.s ──> as -o test_all.elf                    # 直接汇编，不加
 | 5   | `mul.w` `mulh.w` `mulh.wu` `div.w` `div.wu` `mod.w` `mod.wu`              |
 | 6   | `st.w`/`ld.w`/`st.h`/`ld.h`/`ld.hu`/`st.b`/`ld.b`/`ld.bu`（验证符号扩展） |
 | 7   | `beq` `bne` `blt` `bge` `bltu` `bgeu` `b` `bl` `jirl`                     |
+| 8   | `ori`（零扩展）`sltui`（符号扩展）`slt`/`sltu`（有/无符号）`blt`、`beq` 不跳转路径 |
+| 9   | `st.b`/`ld.bu` 字节通道 1..3、`ld.h` 负数、`mulh.w` 负数、`div.w`/`mod.w` 负数与除 0、`-2^31/-1` 边界 |
 
 > **未实现**：拨码开关选择「单跑某项」（原计划的第 5 条）。当前为全量跑，失败即停机显示错误码。
 >
