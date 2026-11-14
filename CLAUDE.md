@@ -4,23 +4,39 @@
 
 ## 项目概况
 
-- 当前可综合设计是 LoongArch LA32R 单周期 CPU，RTL 在 `rtl_single_cycle/`，开发板顶层为 `cpu_board`。
+- 已完成的单周期 CPU 归档在 `archive/single_cycle/`，作为性能对比基线与中期交付物，**冻结不再开发**。新开发一律在流水线版（`rtl/`）。
+- 单周期可综合设计的开发板顶层为 `cpu_board`；流水线版的顶层名预留在脚本映射表中（`cpu_pipeline_board`），随第一个 RTL 文件落地时确认。
 - 目标板为 EGO1 / Xilinx Artix-7 `xc7a35tcsg324-1`。Vivado 版本存在跨机器差异（2023.2 与 2019.1），避免依赖较新版本才支持的语法或 Tcl 特性。
 - 仓库保存源码和可复现构建脚本，不保存 Vivado 工程及构建产物。
-- `design/DESIGN.md` 含较长期的流水线 CPU 目标和设计方案；不要把规划内容误认为已实现功能。当前实现及构建方式以 `rtl_single_cycle/`、`scripts/` 和 `design/BUILD.md` 为准。
+- `design/DESIGN.md` 含流水线 CPU 的设计方案；流水线尚未实现，不要把规划内容误认为已实现功能。当前可运行的实现是 `archive/single_cycle/`；构建方式以 `scripts/` 和 `design/BUILD.md` 为准。
+
+## 两套设计并存
+
+单周期（基线）与流水线（主线）共用 `tests/asm/`、`tests/hex/` 与 `constraints/pins.xdc`，
+各自的 RTL / 约束 / testbench 分目录。脚本用 `-design`（Tcl）/ 首个位置参数（shell、bat）选择：
+
+| 设计 | RTL | 约束 | testbench | 顶层 / TB | 工程 / 产物 |
+| --- | --- | --- | --- | --- | --- |
+| `single` | `archive/single_cycle/rtl/` | `constraints/pins.xdc` + `archive/single_cycle/constraints/clk.xdc` | `archive/single_cycle/sim/` | `cpu_board` / `tb_all` | `cpu_single/`、`out/single/` |
+| `pipeline`（默认） | `rtl/` | `constraints/pins.xdc` + `rtl/pipeline/constraints/` | `sim/` | `cpu_pipeline_board` / `tb_pipeline` | `cpu_pipeline/`、`out/pipeline/` |
+
+映射表在 `scripts/create_project.tcl` 与 `scripts/build.tcl` 各有一份，`sim.sh` 用 `case` 同构描述。
+**增删目录或改顶层名时必须三处同改**，否则 GUI 工程与非工程模式读的源码会不一致。
 
 ## 目录与职责
 
-| 路径                  | 内容                                                             |
-| --------------------- | ---------------------------------------------------------------- |
-| `rtl_single_cycle/`   | CPU RTL 模块；新增 RTL 模块放在这里（glob 自动纳入工程）         |
-| `constraints/`        | Vivado XDC 约束；`cpu.xdc` 用于当前 CPU 顶层。该目录下**所有** `.xdc` 都会被 glob 纳入且全部生效，勿放仅供参考的约束 |
-| `sim/`                | Verilog testbench（glob 自动纳入工程）                           |
-| `tests/asm/`          | GNU LoongArch 汇编测试源及 Makefile                              |
-| `tests/hex/`          | `$readmemh` 使用的程序镜像；由汇编源生成，构建所需且纳入版本控制 |
-| `scripts/`            | Vivado Tcl、Linux 和 Windows 构建/烧录脚本                       |
-| `design/`、`doc/`     | 设计、构建、调试文档及参考资料                                   |
-| `out/`、`cpu_single/` | 本机构建输出或 Vivado GUI 工程，不提交                           |
+| 路径 | 内容 |
+| --- | --- |
+| `rtl/` | 流水线 CPU RTL（主线）；新增模块放这里，glob 自动纳入 |
+| `rtl/pipeline/constraints/` | 流水线专属约束（时钟等）；共享引脚在根 `constraints/` |
+| `archive/single_cycle/` | 已冻结的单周期版（`rtl/` + `constraints/` + `sim/`） |
+| `constraints/` | `pins.xdc`：EGO1 引脚约束，两套设计共用。该目录下**所有** `.xdc` 都会被 glob 纳入且全部生效，勿放仅供参考的约束 |
+| `sim/` | 流水线 testbench（glob 自动纳入工程） |
+| `tests/asm/` | GNU LoongArch 汇编测试源及 Makefile（两套设计共用） |
+| `tests/hex/` | `$readmemh` 使用的程序镜像；由汇编源生成，构建所需且纳入版本控制 |
+| `scripts/` | Vivado Tcl、Linux 和 Windows 构建/烧录脚本 |
+| `design/`、`doc/` | 设计、构建、调试文档及参考资料 |
+| `out/`、`cpu_single/`、`cpu_pipeline/` | 本机构建输出或 Vivado GUI 工程，不提交 |
 
 ## 编码与 RTL 规范
 
@@ -28,11 +44,12 @@
 - RTL 使用 Verilog-2001 和 Vivado 2019.1 可用的语法子集；除非项目明确升级工具链，不要引入依赖新版本的 SystemVerilog 特性。
 - 模块使用显式端口列表，信号名采用小写下划线风格；位宽写明，常量带明确位宽，避免隐式截断/扩展。
 - 组合逻辑使用 `always @(*)` 和阻塞赋值；过程块给所有输出完整赋默认值，避免锁存器。时序逻辑使用非阻塞赋值。
-- 保持复位极性、同步方式和时钟行为与现有模块一致；当前 CPU 内部复位为低有效 `rst_n`。不要在局部重构中改变板级接口或时钟分频约定。
+- 保持复位极性、同步方式和时钟行为与现有模块一致；CPU 内部复位为低有效 `rst_n`。不要在局部重构中改变板级接口或时钟分频约定。单周期的 `CLK_DIV`（`cpu_board.v`）与 `archive/single_cycle/constraints/clk.xdc` 的 `-divide_by`（= 2×CLK_DIV）必须成对修改。
 - 指令字段、立即数扩展、分支/跳转偏移、访存宽度和 MMIO 地址都属于体系结构行为。修改解码或数据通路时，先查阅 `design/DESIGN.md` 和相关模块，再同步更新汇编用例/镜像与文档。
 - `imem.v` 通过 `IMEM_FILE` 宏装载程序。Vivado 构建必须保留该宏和有效的 `tests/hex/test_all.hex` 输入；不要把 `.s` 文件加入 Vivado 工程，GNU 汇编源应先生成 hex。
-- 新增 RTL 文件放进 `rtl_single_cycle/`，`scripts/build.tcl` 会扫描该目录的 `.v` 文件。`constraints/*.xdc`、`sim/*.v`、`tests/hex/*.hex` 同样是 glob 扫描。若使用 GUI 工程，运行 `scripts/create_project.tcl` 同步工程源文件（增删文件后重跑即可）。
+- 新增 RTL 文件放进 `rtl/`（流水线）或 `archive/single_cycle/rtl/`（单周期，仅修 bug），`scripts/build.tcl` 按设计扫描对应目录的 `.v`。约束、`sim/*.v`、`tests/hex/*.hex` 同样是 glob 扫描。若使用 GUI 工程，运行 `scripts/create_project.tcl -tclargs <design>` 同步（增删文件后重跑即可）。
 - hex 文件"登记进工程"与"被当作当前程序"是两回事：前者由 glob 自动完成，后者由 `IMEM_FILE` 宏决定。换测试程序必须改 `tests/asm/Makefile` 与 `build.tcl`/`create_project.tcl` 里的 `$hex`，只放新 hex 进目录不会生效且无提示。
+- `tests/asm/test_all.s` 的延时轮数由 `DELAY_COUNT` 符号控制，Makefile 按 `DESIGN` 用 `--defsym` 注入（单周期 31250，流水线 195312500）。注意 GNU `as` 的 `-D` 是调试开关，不是宏定义。
 - 不做与任务无关的重排、全文件格式化或接口重命名，便于 review 并避免跨平台编码差异。
 
 ## Git 规范
@@ -52,29 +69,34 @@
 Linux：
 
 ```bash
-# 构建综合、布局布线和 bitstream；脚本会先运行汇编 Makefile
-./scripts/build.sh
+# 批处理仿真，只输出 PASS/FAIL（最快的一条验证路径）
+./scripts/sim.sh                # 默认 pipeline
+./scripts/sim.sh single         # 单周期基线
+
+# 构建综合、布局布线和 bitstream；脚本会先按 DESIGN 运行汇编 Makefile
+./scripts/build.sh              # 默认 pipeline -> out/pipeline/
+./scripts/build.sh single       # 单周期 -> out/single/
 
 # 构建后烧录 EGO1（需要 Vivado 和连接好的 JTAG 板卡）
-./scripts/build.sh program
+./scripts/build.sh single program
 
 # 仅在修改汇编且需要检查机器码时
 make -C tests/asm disasm
 ```
 
-Windows 使用 `scripts/build.bat`，可传入 `program` 参数。需要 GNU LoongArch binutils（`loongarch64-linux-gnu-as`、`objcopy`、`objdump`）和 Vivado；Vivado 的 `bin` 目录需在 `PATH` 中（Linux 脚本也会尝试常见安装路径）。
+Windows 使用 `scripts/build.bat`，参数含义相同（如 `scripts\build.bat single program`）。需要 GNU LoongArch binutils（`loongarch64-linux-gnu-as`、`objcopy`、`objdump`）和 Vivado；Vivado 的 `bin` 目录需在 `PATH` 中（Linux 脚本也会尝试常见安装路径）。
 
 - 构建入口：`scripts/build.sh` / `scripts/build.bat` → `scripts/build.tcl`。
-- 构建脚本先执行 `make -C tests/asm`，然后以非工程模式读取 `rtl_single_cycle/*.v`、`constraints/*.xdc` 和测试 hex，目标器件为 `xc7a35tcsg324-1`，顶层为 `cpu_board`。
-- 生成文件位于 `out/`，包括 `out/cpu_board.bit`、Vivado 日志和报告；它们是本地产物，不加入 Git。
+- 构建脚本先执行 `make -C tests/asm DESIGN=<design>`，然后以非工程模式读取该设计的 RTL 目录、约束目录和共享测试 hex，目标器件为 `xc7a35tcsg324-1`。
+- 生成文件位于 `out/<design>/`，包括 `cpu_board.bit`、Vivado 日志和报告；它们是本地产物，不加入 Git。两套设计的比特流分目录，互不覆盖。
 - 上板前检查综合日志中 `$readmemh` 成功读取程序文件的提示。若文件不存在或装载失败，不要把“bitstream 已生成”当作构建有效。
 - 不要在未确认目标板和硬件连接的情况下调用烧录命令。
 
 ### GUI 工程与批处理仿真
 
-- `scripts/create_project.tcl`（Windows 有 `.bat` 封装）用于生成/增量更新本地 `cpu_single/cpu_single.xpr`；工程不进 Git。
-- 行为仿真在 **Vivado GUI** 里跑：打开上述工程 → Flow Navigator → Simulation → Run Behavioral Simulation。修改 `tests/asm/test_all.s` 后应先运行 `make -C tests/asm`；GUI 工程模式下若程序镜像变化未被重新读取，按 `design/BUILD.md` 的说明重置综合运行。
-- `sim/tb_all.v` 通过 MMIO 写序列输出 PASS/FAIL 信息。调试波形时可用 Vivado GUI 打开本地工程。
+- `scripts/create_project.tcl`（Windows 有 `.bat` 封装）用于生成/增量更新本地工程：`-tclargs single` → `cpu_single/`，默认 pipeline → `cpu_pipeline/`；工程不进 Git。
+- 行为仿真在 **Vivado GUI** 里跑：打开对应工程 → Flow Navigator → Simulation → Run Behavioral Simulation。修改 `tests/asm/test_all.s` 后应先运行 `make -C tests/asm`；GUI 工程模式下若程序镜像变化未被重新读取，按 `design/BUILD.md` 的说明重置综合运行。
+- `archive/single_cycle/sim/tb_all.v` 通过 MMIO 写序列输出 PASS/FAIL 信息。流水线的 testbench 待建（`sim/tb_pipeline.v`）。调试波形时可用 Vivado GUI 打开本地工程。
 
 ## 建议工作流程
 

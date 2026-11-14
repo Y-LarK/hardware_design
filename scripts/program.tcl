@@ -1,8 +1,10 @@
 # ============================================================================
 # program.tcl —— 把比特流烧录到 EGO1（xc7a35tcsg324-1）
 # ----------------------------------------------------------------------------
-# 用法：vivado -mode batch -source scripts/program.tcl
-# 前置：out/cpu_board.bit 已由 build.tcl 生成
+# 用法：
+#   vivado -mode batch -source scripts/program.tcl                  # 默认 pipeline
+#   vivado -mode batch -source scripts/program.tcl -tclargs single  # 单周期基线
+# 前置：out/<design>/cpu_board.bit 已由 build.tcl 生成
 #
 # 硬件连接（已实测，2026-10-15）：
 #   板载 JTAG 芯片 FTDI FT2232H（USB ID 0403:6010），hw_target 形如
@@ -12,11 +14,22 @@
 
 set script_dir [file dirname [file normalize [info script]]]
 set root       [file normalize [file join $script_dir ..]]
-set bit        [file join $root out cpu_board.bit]
+
+# ---- 设计名（默认 pipeline，与 build.tcl 保持一致）----
+set design pipeline
+if {[llength $argv] > 0 && [lindex $argv 0] ne ""} {
+    set design [lindex $argv 0]
+}
+if {$design ni {single pipeline}} {
+    puts "ERROR: 未知设计名 '$design'，可用值：pipeline / single"
+    exit 1
+}
+
+set bit [file join $root out $design cpu_board.bit]
 
 if {![file exists $bit]} {
     puts "ERROR: 比特流不存在：$bit"
-    puts "       请先运行：vivado -mode batch -source scripts/build.tcl"
+    puts "       请先运行：vivado -mode batch -source scripts/build.tcl -tclargs $design"
     exit 1
 }
 

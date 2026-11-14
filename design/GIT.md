@@ -64,7 +64,7 @@ add some text in DESIGN.md     ← 无 type、无信息量
 
 **✅ 提交**：
 
-- `rtl_single_cycle/`、`rtl/`（流水线阶段）的全部 `.v`
+- `rtl/`（流水线，主线）与 `archive/single_cycle/`（单周期，已冻结）的全部 `.v`
 - `constraints/` 的 `.xdc`
 - `sim/` 的 testbench
 - `tests/` 的汇编源与 `hex/` 下的 `.hex`/`.mem`（白名单已放行）
@@ -133,7 +133,7 @@ git pull --rebase origin main
 git switch -c feat/pipeline-forwarding
 
 # 干跑确认要提交什么
-git add -n rtl_single_cycle/
+git add -n rtl/
 git status
 
 # 提交（规范的中文 message）

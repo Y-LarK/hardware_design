@@ -2,10 +2,14 @@
 REM ============================================================================
 REM create_project.bat —— 一键创建 Vivado 工程（Windows 用）
 REM ----------------------------------------------------------------------------
-REM 用法：双击本文件即可（或在 cmd 中执行 scripts\create_project.bat）
+REM 用法：
+REM   scripts\create_project.bat            生成 pipeline 工程（默认）
+REM   scripts\create_project.bat single     生成单周期基线工程
 REM
-REM 作用：生成 cpu_single\cpu_single.xpr，之后用 Vivado GUI 打开它即可
+REM 作用：生成 <design>\<design>.xpr，之后用 Vivado GUI 打开它即可
 REM       跑仿真、看波形、综合实现。
+REM   single   -> cpu_single\cpu_single.xpr
+REM   pipeline -> cpu_pipeline\cpu_pipeline.xpr
 REM
 REM 【为什么需要这个脚本】
 REM   .xpr 工程文件不能进 git（Vivado 版本单向升级 + 绝对路径 + 跨 OS 分隔符），
@@ -19,6 +23,19 @@ setlocal
 
 set SCRIPT_DIR=%~dp0
 set ROOT=%SCRIPT_DIR%..
+
+REM ---- 解析设计名（pipeline / single），与 create_project.tcl 的映射表一致 ----
+set DESIGN=pipeline
+if not "%~1"=="" set DESIGN=%~1
+if /i "%DESIGN%"=="single" (
+    set PROJ_NAME=cpu_single
+) else if /i "%DESIGN%"=="pipeline" (
+    set PROJ_NAME=cpu_pipeline
+) else (
+    echo ERROR: 未知设计名 "%DESIGN%"，可用值：pipeline / single
+    pause
+    exit /b 1
+)
 
 REM ---- 定位 Vivado ----
 REM 【为什么不能只写 where vivado 再调 "%VIVADO%"】
@@ -76,8 +93,8 @@ echo 使用 Vivado: %VIVADO%
 REM 日志目录必须先建好，否则 -log 会因目录不存在而失败
 if not exist "%ROOT%\out" mkdir "%ROOT%\out"
 
-echo ===== 创建 Vivado 工程 =====
-call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%create_project.tcl" -log "%ROOT%\out\vivado_create.log" -journal "%ROOT%\out\vivado_create.jou"
+echo ===== 创建 Vivado 工程（%DESIGN%）=====
+call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%create_project.tcl" -tclargs "%DESIGN%" -log "%ROOT%\out\vivado_create.log" -journal "%ROOT%\out\vivado_create.jou"
 
 if errorlevel 1 (
     echo.
@@ -88,7 +105,7 @@ if errorlevel 1 (
 
 echo.
 echo ===== 完成 =====
-echo   工程文件：cpu_single\cpu_single.xpr
+echo   工程文件：%PROJ_NAME%\%PROJ_NAME%.xpr
 echo   下一步：用 Vivado GUI 打开它
 echo     - 看波形：Flow Navigator -^> Simulation -^> Run Behavioral Simulation
 echo     - 综合实现：Flow Navigator -^> Synthesis / Implementation

@@ -36,6 +36,18 @@
  * 构建：见同目录 Makefile
  * ============================================================================ */
 
+/* ---------------------------------------------------------------------------
+ * 延时轮数（随设计的主频变化，由 Makefile 用 --defsym 注入）
+ *   单周期版：CLK_DIV=100 -> CPU 0.5 MHz -> 每轮 2 条指令 x 2us = 4us
+ *             31250 轮 x 4us = 125ms（进度流水灯肉眼可辨）
+ *   流水线版：目标 100 MHz -> 每轮约 20ns，需放大约 6250 倍才等价
+ *   注意：as 的 -D 是「输出调试信息」开关，定义符号必须用 --defsym：
+ *         loongarch64-linux-gnu-as --defsym DELAY_COUNT=1000 -o x.o x.s
+ * -------------------------------------------------------------------------*/
+    .ifndef DELAY_COUNT
+    .set DELAY_COUNT, 31250         /* 默认值：单周期基线 */
+    .endif
+
     .text
     .globl _start
 _start:
@@ -95,7 +107,7 @@ _start:
     /* 进度灯：组 0 通过，LED = 0x0001，随后延迟 125ms 让流水可见 */
     li.w      $s1, 1
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY0:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY0
@@ -112,7 +124,7 @@ DELAY0:
     /* 进度灯：组 1 通过，LED = 0x0003，随后延迟 125ms 让流水可见 */
     li.w      $s1, 3
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY1:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY1
@@ -156,7 +168,7 @@ DELAY1:
     /* 进度灯：组 2 通过，LED = 0x0007，随后延迟 125ms 让流水可见 */
     li.w      $s1, 7
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY2:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY2
@@ -203,7 +215,7 @@ DELAY2:
     /* 进度灯：组 3 通过，LED = 0x000F，随后延迟 125ms 让流水可见 */
     li.w      $s1, 0xF
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY3:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY3
@@ -253,7 +265,7 @@ DELAY3:
     /* 进度灯：组 4 通过，LED = 0x001F，随后延迟 125ms 让流水可见 */
     li.w      $s1, 0x1F
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY4:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY4
@@ -301,7 +313,7 @@ DELAY4:
     /* 进度灯：组 5 通过，LED = 0x003F，随后延迟 125ms 让流水可见 */
     li.w      $s1, 0x3F
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY5:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY5
@@ -343,7 +355,7 @@ DELAY5:
     /* 进度灯：组 6 通过，LED = 0x007F，随后延迟 125ms 让流水可见 */
     li.w      $s1, 0x7F
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY6:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY6
@@ -431,7 +443,7 @@ DELAY6:
        随后延迟 125ms，再进入 PASS 全亮，总流水约 1s */
     li.w      $s1, 0xFF
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
+    li.w      $s5, DELAY_COUNT            /* 31250 轮 x 4us（2 指令 x 2us）= 125ms */
 DELAY7:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY7
@@ -490,7 +502,7 @@ DELAY7:
     /* 进度灯：组 8 通过，LED = 0x01FF，随后延迟 125ms */
     li.w      $s1, 0x1FF
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250
+    li.w      $s5, DELAY_COUNT
 DELAY8:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY8
@@ -578,7 +590,7 @@ DELAY8:
     /* 进度灯：组 9 通过，LED = 0x03FF */
     li.w      $s1, 0x3FF
     st.w      $s1, $t7, 0
-    li.w      $s5, 31250
+    li.w      $s5, DELAY_COUNT
 DELAY9:
     addi.w    $s5, $s5, -1
     bne       $s5, $zero, DELAY9

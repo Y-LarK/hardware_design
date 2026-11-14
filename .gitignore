@@ -11,6 +11,7 @@
 *.str
 archive_project_summary.txt
 cpu_single/
+cpu_pipeline/
 
 # ---- Vivado 生成目录：两种命名形态都覆盖 ----
 # 形态 A「目录即工程」：cpu_single.cache/ cpu_single.runs/ ...
@@ -64,6 +65,8 @@ usage_statistics_webtalk.*
 tests/asm/*.elf
 tests/asm/*.bin
 tests/asm/*.o
+# Makefile 用它记录上次的 DESIGN，换设计时强制重编（本地产物）
+tests/asm/.design-stamp
 
 # ---- 仿真临时产物 ----
 sim/work/

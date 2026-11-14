@@ -1,7 +1,7 @@
 # 构建与工程管理
 
-> 建立日期：2026-10-16
-> 适用：单周期 CPU（`rtl_single_cycle/`）
+> 建立日期：2026-10-16（2026-11-14 改为两套设计并存）
+> 适用：单周期（已归档，`archive/single_cycle/`）+ 流水线（主线，`rtl/`）
 > 环境：本机 Fedora 44 + Vivado 2023.2；队友 Windows + Vivado 2019.1
 
 本文说明**仓库怎么组织、工程怎么建、代码怎么跑起来**。设计决策见 [DESIGN.md](DESIGN.md)，踩坑记录见 [DEBUG_LOG.md](DEBUG_LOG.md)。
@@ -24,17 +24,26 @@
 
 ```
 hardware_design/
-├── rtl_single_cycle/     ← 全部 RTL 源码（10 个 .v），新增模块放这里
-├── constraints/          ← 工程用的 .xdc（当前仅 cpu.xdc，整个目录会被 glob 纳入）
-├── sim/                  ← testbench（当前 tb_all.v，整个目录会被 glob 纳入）
+├── rtl/                          ← 流水线 RTL（主线），新增模块放这里
+│   └── pipeline/constraints/     ← 流水线专属约束（时钟等）
+├── archive/single_cycle/         ← 已冻结的单周期版，只作性能基线
+│   ├── rtl/                      ←   10 个 .v
+│   ├── constraints/clk.xdc       ←   分频时钟约束（与 cpu_board.v 的 CLK_DIV 绑定）
+│   └── sim/tb_all.v              ←   上板自检仿真平台
+├── constraints/pins.xdc          ← 【共享】EGO1 引脚约束
+├── sim/                          ← 流水线 testbench（待建 tb_pipeline.v）
 ├── tests/
-│   ├── asm/              ← test_all.s（汇编源）+ Makefile
-│   └── hex/              ← test_all.hex（由 asm 的 make 生成，勿手工改）
-├── scripts/              ← 构建脚本（见 §3）
-├── design/               ← 文档
-├── cpu_single/           ← 【工程容器】本地产物，不进 git
-└── out/                  ← 【构建输出】本地产物，不进 git
+│   ├── asm/                      ← test_all.s（汇编源）+ Makefile【共享】
+│   └── hex/                      ← test_all.hex（由 asm 的 make 生成，勿手工改）
+├── scripts/                      ← 构建脚本（见 §3）
+├── design/                       ← 文档
+├── cpu_single/  cpu_pipeline/    ← 【工程容器】本地产物，不进 git
+└── out/                          ← 【构建输出】out/<design>/，不进 git
 ```
+
+**单周期与流水线的关系**：单周期是已跑通的基线（中期交付物），冻结后不再修改；
+流水线是新主线。两者共用汇编源、hex 和引脚约束，各自的 RTL / 时钟约束 / testbench 分目录。
+所有脚本用首个参数（Tcl 是 `-tclargs`）选设计，不带参数默认 `pipeline`。
 
 ---
 
@@ -44,11 +53,11 @@ hardware_design/
 
 | | 工程模式（GUI） | 非工程模式（脚本） |
 |---|---|---|
-| **入口** | `cpu_single/cpu_single.xpr` | `scripts/build.sh` |
+| **入口** | `cpu_single/` 或 `cpu_pipeline/` 下的 `.xpr` | `scripts/build.sh` |
 | **适合** | 看波形、单步调试、改约束 | 快速出 bit、上板 |
 | **速度** | 慢（GUI 启动 + 交互） | 快（纯批处理） |
-| **产物** | `cpu_single.runs/impl_1/cpu_board.bit` | `out/cpu_board.bit` |
-| **读的源码** | `rtl_single_cycle/`（引用式） | `rtl_single_cycle/`（glob） |
+| **产物** | `*.runs/impl_1/cpu_board.bit` | `out/<design>/cpu_board.bit` |
+| **读的源码** | 该设计的 RTL 目录（引用式） | 该设计的 RTL 目录（glob） |
 
 > 两条路读的是**同一份源码**，逻辑等价。**别混用产物**——`scripts/program.tcl` 烧的是 `out/cpu_board.bit`。
 
@@ -62,14 +71,27 @@ hardware_design/
 | `build.tcl` | 非工程模式：综合→实现→bit | 上板前 |
 | `build.sh` / `.bat` | 上面两个的封装，一键 | 日常构建、烧录 |
 | `program.tcl` | 烧录 bit 到开发板 | 上板 |
+| `sim.sh` | 批处理仿真，只输出 PASS/FAIL | 改完 RTL 后快速回归 |
+
+**设计参数**（第一个位置参数，省略时为 `pipeline`）：
+
+```bash
+./scripts/sim.sh single              # 仿真单周期基线
+./scripts/build.sh                   # 构建流水线（默认）
+./scripts/build.sh single program    # 构建单周期并烧录
+vivado -mode batch -source scripts/create_project.tcl -tclargs single
+```
+
+设计到目录的映射表在 `create_project.tcl` 与 `build.tcl` 各一份，`sim.sh` 用 `case` 同构描述。
+**增删目录或改顶层名必须三处同改**。
 
 ### 3.1 首次上手（队友或换机器）
 
 ```bash
-# Linux
-vivado -mode batch -source scripts/create_project.tcl
+# Linux（单周期基线；不带参数则生成流水线工程）
+vivado -mode batch -source scripts/create_project.tcl -tclargs single
 
-# Windows：双击 scripts\create_project.bat
+# Windows：scripts\create_project.bat single
 ```
 
 生成 `cpu_single/cpu_single.xpr`，之后用 GUI 打开即可。
@@ -78,13 +100,16 @@ vivado -mode batch -source scripts/create_project.tcl
 
 ```bash
 # 1. 改代码（引用式，改完立即生效，无需在 Vivado 里重新 Add）
-vim rtl_single_cycle/alu.v
+vim rtl/alu.v
 
-# 2. 跑仿真看 PASS/FAIL 与波形 → 开 GUI
-vivado cpu_single/cpu_single.xpr
+# 2. 先批处理仿真确认 PASS（比开 GUI 快得多）
+./scripts/sim.sh
+
+# 3. 要看波形再开 GUI
+vivado cpu_pipeline/cpu_pipeline.xpr
 #    Flow Navigator → Simulation → Run Simulation → Run Behavioral Simulation
 
-# 3. 上板（构建 + 烧录）
+# 4. 上板（构建 + 烧录）
 ./scripts/build.sh program
 ```
 
@@ -105,6 +130,13 @@ make -C tests/asm          # ← 忘了这步，Vivado 跑的还是旧程序，�
 ```
 
 `build.sh` 已包含 `make`，用脚本构建时无需手动执行。
+
+**延时轮数随设计变**：汇编源的进度灯延时由 `DELAY_COUNT` 符号控制，
+Makefile 按 `DESIGN` 用 `--defsym` 注入（单周期 31250 轮 ≈ 125ms，流水线 195312500 轮）。
+所以改汇编后应带上设计名：`make -C tests/asm DESIGN=single`。
+换设计会自动触发重编（Makefile 用 `.design-stamp` 把 DESIGN 纳入依赖）。
+
+> 注：GNU `as` 的 `-D` 是「输出调试信息」开关，不是宏定义，定义符号必须用 `--defsym`。
 
 **改了 hex 之后，工程模式必须 Reset 综合**（Vivado 不感知 hex 内容变化）：
 
@@ -174,21 +206,19 @@ INFO: [Synth 8-3876] $readmem data file '...' is read successfully
 ## 5. 工作流程示意图
 
 ```
-        rtl_single_cycle/*.v  ←── 唯一真源，改这里
-        constraints/cpu.xdc
-        sim/tb_all.v
-        tests/hex/test_all.hex
-                 │
-       ┌─────────┴──────────┐
-       │                    │
-   工程模式              非工程模式
-   create_project.tcl    build.tcl
-       │                    │
-   cpu_single.xpr        out/cpu_board.bit
-       │                    │
-   GUI 仿真/看波形          program.tcl
-       │                    │
-       └────────► EGO1 开发板 ◄────┘
+   共用（共享真源）
+   constraints/pins.xdc        tests/asm/test_all.s ──make──> tests/hex/test_all.hex
+        │                                        │
+   ┌────┴──────────────────┬─────────────────────┘
+   │                       │
+ single（冻结基线）      pipeline（主线）
+ archive/single_cycle/   rtl/ + sim/ + rtl/pipeline/constraints/
+   │                       │
+   ├─ 工程模式：cpu_single/ │  ├─ 工程模式：cpu_pipeline/
+   └─ 非工程：out/single/   │  └─ 非工程：out/pipeline/
+        │                        │
+        └────► EGO1 开发板 ◄─────┘
+              program.tcl <design>
 ```
 
 ---
@@ -199,7 +229,7 @@ INFO: [Synth 8-3876] $readmem data file '...' is read successfully
 不能。Vivado 版本单向升级（2023.2 → 2019.1 打不开）。他必须用自己的 Vivado 跑一次 `create_project`。
 
 **Q：改了 RTL，工程里要重新 Add 吗？**
-不用。工程是**引用式**（`$PPRDIR/../rtl_single_cycle/*.v`），改文件立即生效。
+不用。工程是**引用式**（`$PPRDIR/../rtl/*.v`），改文件立即生效。
 
 **Q：新增（或删除）了一个 `.v` 模块，工程里不同步？**
 重跑 `create_project.tcl` 即可——它是幂等的，会自动补加新文件、移除失效引用，且**不重建工程、不丢 GUI 设置**（见 §4.2）。
@@ -208,7 +238,7 @@ INFO: [Synth 8-3876] $readmem data file '...' is read successfully
 **Q：仿真跑起来只有 1000ns 就结束了？**
 GUI 里点 **Run All** 即可（默认只跑 1000ns，本程序需约 4500ns 才出结果）。
 
-**Q：`cpu_single/` 和 `out/` 要不要提交？**
+**Q：`cpu_single/`、`cpu_pipeline/` 和 `out/` 要不要提交？**
 都不提交，`.gitignore` 已忽略。
 
 **Q：改了汇编源，Vivado 里却没变化？**

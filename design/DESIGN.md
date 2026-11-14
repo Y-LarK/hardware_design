@@ -412,7 +412,9 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 - 依据：`led_blink` 在 100 MHz 约束（10 ns 周期）下 WNS = +5.75 ns，说明该器件上 100 MHz 有充裕余量
 - 5 级流水线的关键路径通常是「寄存器堆读 → 转发 MUX → ALU → 分支判定 → PC」，在 Artix-7 **-1 速度等级**上通过 100 MHz 有把握，但不能保证
 - **若时序不收敛**：加 MMCM 输出 50 MHz，或做流水线内部切分。**以时序报告为准**，实际可达频率也是报告里的性能数据之一
-- **单周期版的实际做法**：单周期实现的组合除法器关键路径约 570 ns（见 `rtl_single_cycle/cpu_board.v` 注释），无法在 100 MHz 收敛；上板顶层用 `CLK_DIV=100` 二分频得到 **0.5 MHz** 跑全指令自检，`CLK_DIV=1` 可直连 100 MHz 但只适用于不含 MUL/DIV 的程序。本节 100 MHz 目标针对五级流水线版本。
+- **单周期版的实际做法**：单周期实现的组合除法器关键路径约 570 ns（见 `archive/single_cycle/rtl/cpu_board.v` 注释），无法在 100 MHz 收敛；上板顶层用 `CLK_DIV=100` 二分频得到 **0.5 MHz** 跑全指令自检，`CLK_DIV=1` 可直连 100 MHz 但只适用于不含 MUL/DIV 的程序。本节 100 MHz 目标针对五级流水线版本。
+  > 时钟约束已随单周期版归档到 `archive/single_cycle/constraints/clk.xdc`，
+  > 其中 `-divide_by 200` 与 `cpu_board.v` 的 `CLK_DIV=100` 必须成对修改。
 
 ### 3.9 复位
 
@@ -518,7 +520,9 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 
 ## 6. 工程结构
 
-> 下图为**规划目标形态**（流水线阶段起用 `rtl/`）。当前实际布局：单周期源码在 `cpu_single/cpu_single.srcs/`（见 §6.1），文档在 `design/`，课程资料在 `doc/`。
+> 下图为**规划目标形态**（流水线阶段起用 `rtl/`）。**2026-11-14 已完成单周期归档**：
+> 单周期源码移到 `archive/single_cycle/`（冻结，作性能对比基线），`rtl/` 留给流水线。
+> 实际目录职责与脚本用法以 [BUILD.md](BUILD.md) 为准，本节只保留设计层面的结构规划。
 
 ```
 hardware_design/
@@ -527,7 +531,7 @@ hardware_design/
 │   ├── DEBUG_LOG.md           # 调试记录（上板全黑问题排查全过程）
 │   ├── GIT.md                 # 协作规范
 │   └── QUESTION.md            # 题目原文
-├── rtl_single_cycle/          # 单周期 CPU 源码（10 个 .v，当前开发主线，新增 RTL 放这里）
+├── rtl_single_cycle/          # 【已迁移】见下方 archive/single_cycle/
 ├── constraints/               # 工程用约束（当前仅 cpu.xdc；整个目录的 .xdc 会被 glob 纳入）
 ├── sim/                       # testbench（当前 tb_all.v；整个目录的 .v 会被 glob 纳入）
 ├── tests/asm/                 # 汇编源（test_all.s + Makefile）
@@ -555,7 +559,10 @@ hardware_design/
 │   ├── mem/imem.v             # BRAM 指令存储器
 │   ├── mem/dmem.v             # BRAM 数据存储器
 │   └── periph/mmio.v          # MMIO 译码 + 外设寄存器
-├── rtl_single_cycle/          # 单周期版（基线，中期检查交付物）
+├── archive/single_cycle/      # 单周期版（已冻结，中期检查交付物 + 性能对比基线）
+│   ├── rtl/                   #   10 个 .v
+│   ├── constraints/clk.xdc    #   分频时钟约束（与 CLK_DIV 绑定）
+│   └── sim/tb_all.v           #   上板自检仿真平台
 ├── sim/
 │   ├── tb/tb_cpu_top.v        # 顶层测试平台
 │   ├── tb/tb_mul_div.v        # MDU 单元测试
@@ -576,7 +583,7 @@ hardware_design/
 │       ├── build.sh           # 汇编 + 链接 + objcopy → .mem
 │       └── refmodel.py        # Python 参考模型（逐条执行 + 结果比对）
 ├── constraints/
-│   └── cpu.xdc                # CPU 工程实际使用的约束（从官方全外设约束裁剪）
+│   └── pins.xdc               # 【共享】EGO1 引脚约束（两套设计共用）
 │                              #   官方全量版在 doc/ego1.xdc.txt，故意不放这里
 ├── .gitignore                 # 忽略 Vivado 工程与生成物（见 §6.1）
 ├── doc/                       # 课程资料（已有：开发板手册、电路图、课件图）
@@ -601,15 +608,16 @@ hardware_design/
 
 | 目录                | 内容                                              | 说明                                       |
 | ------------------- | ------------------------------------------------- | ------------------------------------------ |
-| `rtl_single_cycle/` | 单周期 CPU 全部 10 个 .v                          | 新增 RTL 一律放这里（glob 自动纳入）       |
-| `constraints/`      | `cpu.xdc`（CPU 约束）                             | 新增约束放这里（glob 自动纳入且全部生效）  |
+| `rtl/`              | 流水线 CPU RTL（主线）                            | 新增 RTL 一律放这里（glob 自动纳入）       |
+| `archive/single_cycle/` | 单周期版（冻结基线）                          | 不再开发，仅修 bug 或做对比                |
+| `constraints/`      | `pins.xdc`（共享引脚约束）                        | 新增约束放这里（glob 自动纳入且全部生效）  |
 | `sim/`              | `tb_all.v`（上板自检仿真平台）                    | 新增 tb 放这里（glob 自动纳入）            |
 | `tests/asm/`        | `test_all.s`（汇编源）+ `Makefile`                | 新增测试程序放这里                         |
 | `tests/hex/`        | `test_all.hex`（IMEM 初始化）                     | 由 `tests/asm/` 的 `make` 生成，勿手工编辑 |
 
 | 进 git（可移植纯文本）                          | 不进 git（本地生成，已被 .gitignore 忽略）                                |
 | ----------------------------------------------- | ------------------------------------------------------------------------- |
-| `rtl_single_cycle/` 全部 .v                     | `*.xpr` 工程文件                                                          |
+| `rtl/` 与 `archive/single_cycle/` 全部 .v       | `*.xpr` 工程文件                                                          |
 | `constraints/` `sim/` `tests/asm/` `tests/hex/` | `cpu_single.cache/` `cpu_single.runs/` `cpu_single.hw/` `cpu_single.sim/` |
 | `design/` 文档、`doc/` 课程资料                 | `cpu_single.ip_user_files/` `cpu_single.ipdefs/`                          |
 |                                                 | `*.bit` `*.jou` `*.log` `*.rpt` 等生成物                                  |
@@ -629,7 +637,10 @@ vivado -mode batch -source scripts/create_project.tcl
 > 📖 **完整的构建流程、脚本清单、日常开发命令、常见问题，见 [BUILD.md](BUILD.md)。**
 > 本节只保留「为什么这么组织」的设计理由，操作步骤一律以 BUILD.md 为准。
 
-**两条构建路径并存**：工程模式（`cpu_single.xpr`，用于 GUI 仿真看波形）+ 非工程模式（`scripts/build.tcl`，纯脚本快速出 bit）。二者读同一份 `rtl_single_cycle/` 源码，产物位置不同，勿混用。
+**两条构建路径并存**：工程模式（`cpu_single.xpr` / `cpu_pipeline.xpr`，用于 GUI 仿真看波形）+ 非工程模式（`scripts/build.tcl`，纯脚本快速出 bit）。二者读同一份源码，产物位置不同，勿混用。
+
+**单周期归档（2026-11-14）**：单周期版移到 `archive/single_cycle/` 后冻结，作为性能对比基线保留。
+所有脚本用首个参数选设计（`single` / `pipeline`，默认 `pipeline`），映射表见 BUILD.md §3。
 
 **版本兼容注意（写代码时遵守）**：
 

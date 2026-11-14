@@ -3,8 +3,10 @@ REM ============================================================================
 REM build.bat —— 一键构建（综合 -> 实现 -> 比特流），Windows 用
 REM ----------------------------------------------------------------------------
 REM 用法（在资源管理器里双击本文件，或在 cmd 中执行）：
-REM   scripts\build.bat            构建
-REM   scripts\build.bat program    构建并烧录到开发板
+REM   scripts\build.bat                   构建 pipeline（默认）
+REM   scripts\build.bat single            构建单周期基线
+REM   scripts\build.bat single program    构建单周期并烧录
+REM   scripts\build.bat program           构建默认设计并烧录（兼容旧习惯）
 REM
 REM 前置：Vivado 已安装。脚本自动定位 vivado.bat，优先级：
 REM       VIVADO_BAT 环境变量 > PATH > 常见安装位置（详见下方定位段注释）。
@@ -13,6 +15,27 @@ setlocal
 
 set SCRIPT_DIR=%~dp0
 set ROOT=%SCRIPT_DIR%..
+
+REM ---- 解析参数：设计名（pipeline / single）与 program 动作，顺序任意 ----
+REM 与 build.sh、build.tcl 的三个映射表保持一致，改目录三处同改。
+set DESIGN=pipeline
+set DO_PROGRAM=0
+:parse_args
+if "%~1"=="" goto args_done
+if /i "%~1"=="program" (
+    set DO_PROGRAM=1
+) else if /i "%~1"=="single" (
+    set DESIGN=single
+) else if /i "%~1"=="pipeline" (
+    set DESIGN=pipeline
+) else (
+    echo ERROR: 未知参数 "%~1"，可用设计名：pipeline / single；可选动作：program
+    pause
+    exit /b 1
+)
+shift
+goto parse_args
+:args_done
 
 REM ---- 定位 Vivado ----
 REM 【为什么不能只写 where vivado 再调 "%VIVADO%"】
@@ -70,8 +93,27 @@ echo 使用 Vivado: %VIVADO%
 REM 日志目录必须先建好，否则 -log 会因目录不存在而失败
 if not exist "%ROOT%\out" mkdir "%ROOT%\out"
 
-echo ===== 构建单周期 CPU =====
-call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%build.tcl" -log "%ROOT%\out\vivado_build.log" -journal "%ROOT%\out\vivado_build.jou"
+REM 先跑汇编 Makefile：.s 改动后必须重新生成 hex，否则构建用的还是旧程序。
+REM 需要 make（Git for Windows 自带；或用 mingw32-make 改下方命令）。
+REM 若本机没有 make，可手动在 tests\asm 下生成 hex，或忽略此步（打印提示）。
+echo ===== 汇编测试程序（DESIGN=%DESIGN%）=====
+where make >nul 2>&1
+if errorlevel 1 (
+    echo 警告：找不到 make，跳过汇编。若改了 test_all.s，hex 不会更新！
+) else (
+    pushd "%ROOT%\tests\asm"
+    make DESIGN=%DESIGN%
+    if errorlevel 1 (
+        popd
+        echo 汇编失败，请检查 tests\asm\Makefile 与工具链
+        pause
+        exit /b 1
+    )
+    popd
+)
+
+echo ===== 构建 %DESIGN% 设计 =====
+call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%build.tcl" -tclargs "%DESIGN%" -log "%ROOT%\out\vivado_build.log" -journal "%ROOT%\out\vivado_build.jou"
 if errorlevel 1 (
     echo.
     echo 构建失败，请看 out\vivado_build.log
@@ -79,10 +121,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if /i "%1"=="program" (
+if "%DO_PROGRAM%"=="1" (
     echo.
     echo ===== 烧录到开发板 =====
-    call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%program.tcl" -log "%ROOT%\out\vivado_program.log" -journal "%ROOT%\out\vivado_program.jou"
+    call "%VIVADO%" -mode batch -source "%SCRIPT_DIR%program.tcl" -tclargs "%DESIGN%" -log "%ROOT%\out\vivado_program.log" -journal "%ROOT%\out\vivado_program.jou"
     if errorlevel 1 (
         echo.
         echo 烧录失败，请看 out\vivado_program.log
@@ -93,5 +135,5 @@ if /i "%1"=="program" (
 
 echo.
 echo ===== 完成 =====
-echo   比特流：out\cpu_board.bit
+echo   比特流：out\%DESIGN%\cpu_board.bit
 pause

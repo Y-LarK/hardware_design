@@ -1,14 +1,26 @@
 # ============================================================================
-# cpu.xdc ¡ª¡ª µ¥ÖÜÆÚ CPU ÉÏ°åÔ¼Êø£¨EGO1 / xc7a35tcsg324-1£©
-# ´ÓÒÀÔªËØ¹Ù·½ ego1.xdc ²Ã¼ô£¬Ö»±£Áô CPU ¶¥²ãÊµ¼ÊÓÃµ½µÄ¶Ë¿Ú¡£
-# ×¢Òâ£ºXDC ÊÇ Tcl Óï·¨£¬×¢ÊÍ·ûÊÇ #£¨¹Ù·½ÎÄ¼şÀïµÄ // ×¢ÊÍÒÑÍ³Ò»Ìæ»»£©¡£
+# pins.xdc â€”â€” EGO1 å¼•è„šçº¦æŸï¼ˆä¸¤å¥—è®¾è®¡å…±ç”¨ï¼‰
+# ----------------------------------------------------------------------------
+# ä»ä¾å…ƒç´ å®˜æ–¹ ego1.xdc è£å‰ªï¼Œåªä¿ç•™ CPU é¡¶å±‚å®é™…ç”¨åˆ°çš„ç«¯å£ã€‚
+# æ³¨æ„ï¼šXDC æ˜¯ Tcl è¯­æ³•ï¼Œæ³¨é‡Šç¬¦æ˜¯ #ï¼ˆå®˜æ–¹æ–‡ä»¶é‡Œçš„ // æ³¨é‡Šå·²ç»Ÿä¸€æ›¿æ¢ï¼‰ã€‚
+#
+# ã€ä¸ºä»€ä¹ˆæŠŠæ—¶é’Ÿçº¦æŸæ‹†å‡ºå»ã€‘
+#   å¼•è„šä¸å™¨ä»¶ä½ç½®ä¸éšè®¾è®¡å˜ï¼Œä½† create_generated_clock çš„åˆ†é¢‘æ¯”ç»‘å®š
+#   cpu_board.v çš„ CLK_DIVï¼ˆå•å‘¨æœŸ = 100 -> divide_by 200ï¼‰ã€‚æµæ°´çº¿çš„æ—¶é’Ÿ
+#   æ–¹æ¡ˆå°šæœªå®šå‹ï¼Œè‹¥å…±ç”¨ä¸€ä¸ªæ–‡ä»¶ï¼Œä»»ä½•æ”¹åŠ¨éƒ½ä¼šåŒæ—¶å½±å“ä¸¤å¥—è®¾è®¡ã€‚
+#   å› æ­¤ï¼šæœ¬æ–‡ä»¶åªæ”¾ã€Œç«¯å£ -> å¼•è„šã€ï¼Œæ—¶é’Ÿçº¦æŸéšå„è®¾è®¡çš„ clk.xdc èµ°ã€‚
+#
+# ã€çº¦æŸç›®å½•çš„å½’å±ã€‘(è„šæœ¬æŒ‰ -design é€‰ç›®å½•ï¼Œä¸å…±ç”¨åŒä¸€ä¸ª glob)
+#   å…±äº«å¼•è„šï¼šconstraints/pins.xdc           <- æœ¬æ–‡ä»¶
+#   å•å‘¨æœŸ  ï¼šarchive/single_cycle/constraints/
+#   æµæ°´çº¿  ï¼šrtl/pipeline/constraints/      ï¼ˆå¾…å»ºï¼‰
 # ============================================================================
 
-# ---- Ê±ÖÓ / ¸´Î» ----
+# ---- æ—¶é’Ÿ / å¤ä½ ----
 set_property -dict {PACKAGE_PIN P17 IOSTANDARD LVCMOS33} [get_ports sys_clk_in]
 set_property -dict {PACKAGE_PIN P15 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
 
-# ---- 16 ¸ö LED£¨¸ßµçÆ½µãÁÁ£© ----
+# ---- 16 ä¸ª LEDï¼ˆé«˜ç”µå¹³ç‚¹äº®ï¼‰ ----
 set_property -dict {PACKAGE_PIN F6  IOSTANDARD LVCMOS33} [get_ports {led_pin[0]}]
 set_property -dict {PACKAGE_PIN G4  IOSTANDARD LVCMOS33} [get_ports {led_pin[1]}]
 set_property -dict {PACKAGE_PIN G3  IOSTANDARD LVCMOS33} [get_ports {led_pin[2]}]
@@ -26,7 +38,7 @@ set_property -dict {PACKAGE_PIN L1  IOSTANDARD LVCMOS33} [get_ports {led_pin[13]
 set_property -dict {PACKAGE_PIN M1  IOSTANDARD LVCMOS33} [get_ports {led_pin[14]}]
 set_property -dict {PACKAGE_PIN K3  IOSTANDARD LVCMOS33} [get_ports {led_pin[15]}]
 
-# ---- ÊıÂë¹Ü£¨¹²Òõ£»Î»Ñ¡Óë¶ÎÑ¡¾ù¸ßÓĞĞ§£© ----
+# ---- æ•°ç ç®¡ï¼ˆå…±é˜´ï¼›ä½é€‰ä¸æ®µé€‰å‡é«˜æœ‰æ•ˆï¼‰ ----
 set_property -dict {PACKAGE_PIN G2 IOSTANDARD LVCMOS33} [get_ports {seg_cs_pin[0]}]
 set_property -dict {PACKAGE_PIN C2 IOSTANDARD LVCMOS33} [get_ports {seg_cs_pin[1]}]
 set_property -dict {PACKAGE_PIN C1 IOSTANDARD LVCMOS33} [get_ports {seg_cs_pin[2]}]
@@ -54,7 +66,7 @@ set_property -dict {PACKAGE_PIN E2 IOSTANDARD LVCMOS33} [get_ports {seg_data_1_p
 set_property -dict {PACKAGE_PIN D2 IOSTANDARD LVCMOS33} [get_ports {seg_data_1_pin[6]}]
 set_property -dict {PACKAGE_PIN H2 IOSTANDARD LVCMOS33} [get_ports {seg_data_1_pin[7]}]
 
-# ---- 8 Î»²¦Âë¿ª¹Ø ----
+# ---- 8 ä½æ‹¨ç å¼€å…³ ----
 set_property -dict {PACKAGE_PIN P5 IOSTANDARD LVCMOS33} [get_ports {sw_pin[0]}]
 set_property -dict {PACKAGE_PIN P4 IOSTANDARD LVCMOS33} [get_ports {sw_pin[1]}]
 set_property -dict {PACKAGE_PIN P3 IOSTANDARD LVCMOS33} [get_ports {sw_pin[2]}]
@@ -64,7 +76,7 @@ set_property -dict {PACKAGE_PIN M4 IOSTANDARD LVCMOS33} [get_ports {sw_pin[5]}]
 set_property -dict {PACKAGE_PIN N4 IOSTANDARD LVCMOS33} [get_ports {sw_pin[6]}]
 set_property -dict {PACKAGE_PIN R1 IOSTANDARD LVCMOS33} [get_ports {sw_pin[7]}]
 
-# ---- 8 Î» DIP ²¦Âë ----
+# ---- 8 ä½ DIP æ‹¨ç  ----
 set_property -dict {PACKAGE_PIN U3 IOSTANDARD LVCMOS33} [get_ports {dip_pin[0]}]
 set_property -dict {PACKAGE_PIN U2 IOSTANDARD LVCMOS33} [get_ports {dip_pin[1]}]
 set_property -dict {PACKAGE_PIN V2 IOSTANDARD LVCMOS33} [get_ports {dip_pin[2]}]
@@ -74,19 +86,10 @@ set_property -dict {PACKAGE_PIN R3 IOSTANDARD LVCMOS33} [get_ports {dip_pin[5]}]
 set_property -dict {PACKAGE_PIN T3 IOSTANDARD LVCMOS33} [get_ports {dip_pin[6]}]
 set_property -dict {PACKAGE_PIN T5 IOSTANDARD LVCMOS33} [get_ports {dip_pin[7]}]
 
-# ---- 5 ¸ö°´¼ü£¨Ä¬ÈÏµÍ£¬°´ÏÂ¸ß£© ----
+# ---- 5 ä¸ªæŒ‰é”®ï¼ˆé»˜è®¤ä½ï¼ŒæŒ‰ä¸‹é«˜ï¼‰ ----
 set_property -dict {PACKAGE_PIN R11 IOSTANDARD LVCMOS33} [get_ports {btn_pin[0]}]
 set_property -dict {PACKAGE_PIN R17 IOSTANDARD LVCMOS33} [get_ports {btn_pin[1]}]
 set_property -dict {PACKAGE_PIN R15 IOSTANDARD LVCMOS33} [get_ports {btn_pin[2]}]
 set_property -dict {PACKAGE_PIN V1  IOSTANDARD LVCMOS33} [get_ports {btn_pin[3]}]
 set_property -dict {PACKAGE_PIN U4  IOSTANDARD LVCMOS33} [get_ports {btn_pin[4]}]
 
-# ---- Ê±ÖÓÔ¼Êø£º100 MHz ----
-create_clock -period 10.000 -name sys_clk [get_ports sys_clk_in]
-
-# ---- CPU ·ÖÆµÊ±ÖÓ£ºcpu_board.v µÄ cpu_clk ÓÉ sys_clk ·­×ªµÃµ½ ----
-# Ã¿ CLK_DIV ¸ö sys_clk ÖÜÆÚ·­×ªÒ»´Î£¬ÍêÕûÖÜÆÚ = 2*CLK_DIV ¸ö sys_clk ÖÜÆÚ¡£
-# divide_by ±ØĞëÓë cpu_board.v µÄ CLK_DIV Í¬²½£ºCLK_DIV=100 -> divide_by 200¡£
-# ×¢Òâ£ºXDC ²»Ö§³Ö if/set µÈ Tcl ¿ØÖÆÓï¾ä£¨»á±¨ Designutils 20-1307£©£¬
-# ËùÒÔÕâÀï²»×öÌõ¼şÊØÎÀ£»CLK_DIV ¸Ä¶¯Ê±ĞëÍ¬²½ĞŞ¸ÄÏÂÃæµÄ divide_by¡£
-create_generated_clock -name cpu_clk -source [get_ports sys_clk_in] -divide_by 200 [get_pins cpu_clk_reg/Q]
