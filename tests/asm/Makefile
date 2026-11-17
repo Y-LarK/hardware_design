@@ -32,6 +32,12 @@ ELF := test_all.elf
 BIN := test_all.bin
 HEX := ../hex/test_all.hex
 
+# ---- 流水线 Step 1 基础测试（独立目标，不影响默认 all/test_all）----
+PIPE_SRC := test_pipe_basic.s
+PIPE_ELF := test_pipe_basic.elf
+PIPE_BIN := test_pipe_basic.bin
+PIPE_HEX := ../hex/test_pipe_basic.hex
+
 # 设计 -> 延时轮数
 ifeq ($(DESIGN),single)
 DELAY_COUNT := 31250
@@ -48,7 +54,7 @@ ASFLAGS := --defsym DELAY_COUNT=$(DELAY_COUNT)
 # 用 stamp 文件把 DESIGN 纳入依赖，改设计必然触发重编。
 STAMP := .design-stamp
 
-.PHONY: all disasm hexdump clean
+.PHONY: all disasm hexdump clean test_pipe_basic
 
 all: $(HEX)
 
@@ -72,8 +78,22 @@ $(HEX): $(BIN)
 disasm: $(ELF)
 	$(OBJDUMP) -d -M no-aliases $<
 
+# 流水线 Step 1：只汇编，不注入 DELAY_COUNT（程序无软件延时循环）
+test_pipe_basic: $(PIPE_HEX)
+
+$(PIPE_ELF): $(PIPE_SRC)
+	$(AS) -o $@ $<
+
+$(PIPE_BIN): $(PIPE_ELF)
+	$(OBJCOPY) -O binary $< $@
+
+$(PIPE_HEX): $(PIPE_BIN)
+	od -An -tx4 -v -w4 $< | tr -d ' ' > $@
+	@echo "生成 $@ ：$$(wc -l < $@) 条指令"
+
 hexdump: $(HEX)
 	cat $(HEX)
 
 clean:
 	rm -f $(ELF) $(BIN) $(STAMP)
+	rm -f $(PIPE_ELF) $(PIPE_BIN)

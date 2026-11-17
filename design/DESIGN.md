@@ -520,7 +520,7 @@ MDU 独立运行不阻塞流水线，用计分板（scoreboard）记录 MDU 的�
 
 ## 6. 工程结构
 
-> 下图为**规划目标形态**（流水线阶段起用 `rtl/`）。**2026-11-14 已完成单周期归档**：
+> 下图为**结构规划**（流水线 Step 1 已按扁平目录落地 `rtl/`）。**2026-11-14 已完成单周期归档**：
 > 单周期源码移到 `archive/single_cycle/`（冻结，作性能对比基线），`rtl/` 留给流水线。
 > 实际目录职责与脚本用法以 [BUILD.md](BUILD.md) 为准，本节只保留设计层面的结构规划。
 
@@ -537,28 +537,17 @@ hardware_design/
 ├── tests/asm/                 # 汇编源（test_all.s + Makefile）
 ├── tests/hex/                 # IMEM 初始化文件（test_all.hex，由 asm 生成）
 ├── cpu_single/                # Vivado 工程容器（引用上面的源，整体不进 git）
-├── rtl/                       # 流水线版规划结构（阶段 3 起用）
-│   ├── cpu_top.v              # 顶层：流水线 + IMEM + DMEM + MMIO 译码
-│   ├── core/
-│   │   ├── pc.v               # PC（支持停顿 / 冲刷 / 跳转）
-│   │   ├── if_stage.v         # 取指级
-│   │   ├── id_stage.v         # 译码级：寄存器堆、立即数扩展、控制信号
-│   │   ├── ex_stage.v         # 执行级：ALU、转发 MUX
-│   │   ├── mem_stage.v        # 访存级：对齐选择、符号/零扩展
-│   │   ├── wb_stage.v         # 写回级
-│   │   ├── pipeline_regs.v    # IF/ID、ID/EX、EX/MEM、MEM/WB
-│   │   ├── control_unit.v     # 主控制器（译码）
-│   │   ├── hazard_unit.v      # 冒险检测 + 转发 / 停顿 / 冲刷
-│   │   ├── forward_unit.v     # 转发单元
-│   │   ├── branch_unit.v      # 分支比较（有符号/无符号/相等）
-│   │   ├── branch_predictor.v # BHT + BTB
-│   │   ├── mul_div_unit.v     # 多周期乘除单元
-│   │   └── perf_counter.v     # 性能计数器
-│   ├── alu/alu.v              # ALU（含 slt/sltu 比较、移位）
-│   ├── regfile/regfile.v      # 32×32 双读单写 + 同拍旁路
-│   ├── mem/imem.v             # BRAM 指令存储器
-│   ├── mem/dmem.v             # BRAM 数据存储器
-│   └── periph/mmio.v          # MMIO 译码 + 外设寄存器
+├── rtl/                       # 流水线版（扁平目录；脚本 glob 非递归）
+│   ├── cpu_top.v              # 顶层：五级流水 + IMEM + DMEM + MMIO 译码
+│   ├── pc.v                   # PC（支持停顿 / 冲刷 / 跳转）
+│   ├── pipeline_regs.v        # IF/ID、ID/EX、EX/MEM、MEM/WB
+│   ├── control.v              # 主控制器（译码）
+│   ├── alu.v                  # ALU（含 slt/sltu 比较、移位）
+│   ├── regfile.v              # 32×32 双读单写 + 同拍写穿透
+│   ├── imm_ext.v              # 立即数扩展
+│   ├── imem.v                 # BRAM 指令存储器（同步读）
+│   ├── dmem.v                 # BRAM 数据存储器（同步读）+ MMIO
+│   └── pipeline/constraints/  # 流水线专属约束（时钟等）
 ├── archive/single_cycle/      # 单周期版（已冻结，中期检查交付物 + 性能对比基线）
 │   ├── rtl/                   #   10 个 .v
 │   ├── constraints/clk.xdc    #   分频时钟约束（与 CLK_DIV 绑定）
@@ -589,6 +578,10 @@ hardware_design/
 ├── doc/                       # 课程资料（已有：开发板手册、电路图、课件图）
 └── toolchain_check/           # 工具链验证工程（已有，保留作参考）
 ```
+
+> **目录扁平约束**：`scripts/build.tcl`、`scripts/create_project.tcl` 与
+> `scripts/sim.sh` 都用非递归 glob（如 `rtl/*.v`）。新增 RTL 必须直接放在
+> `rtl/` 根下，不要建 `core/`、`mem/` 等子目录，否则不会被脚本纳入。
 
 > **注**：仓库中**没有** Vivado 工程文件（`*.xpr`）。综合、实现、烧录全部在各自本机的 Vivado GUI 里完成，工程由每人按 §6.1 的步骤自行创建一次。也不再使用命令行 build/program 脚本。
 
